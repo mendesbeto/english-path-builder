@@ -34,7 +34,7 @@
        setIsLoading(false);
        toast({
          title: "Conta criada com sucesso!",
-         description: "Bem-vindo ao English Path. Vamos começar!",
+         description: "Bem-vindo ao Inglês Hope. Vamos começar!",
        });
        navigate("/dashboard");
      }, 1500);
@@ -64,9 +64,9 @@
              <div className="w-10 h-10 rounded-xl bg-gradient-hero flex items-center justify-center">
                <BookOpen className="w-5 h-5 text-white" />
              </div>
-             <span className="font-display font-bold text-xl text-foreground">
-               English <span className="text-primary">Path</span>
-             </span>
+              <span className="font-display font-bold text-xl text-foreground">
+                Inglês <span className="text-primary">Hope</span>
+              </span>
            </div>
  
            {step === 1 ? (
@@ -75,9 +75,9 @@
                <h1 className="text-3xl font-display font-bold text-foreground mb-2">
                  Quem é você?
                </h1>
-               <p className="text-muted-foreground mb-8">
-                 Escolha como você vai usar o English Path
-               </p>
+                <p className="text-muted-foreground mb-8">
+                  Escolha como você vai usar o Inglês Hope
+                </p>
  
                <div className="grid gap-4">
                  <motion.button

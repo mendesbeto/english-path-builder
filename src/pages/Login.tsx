@@ -24,7 +24,7 @@
        setIsLoading(false);
        toast({
          title: "Login realizado!",
-         description: "Bem-vindo de volta ao English Path.",
+         description: "Bem-vindo de volta ao Inglês Hope.",
        });
        navigate("/dashboard");
      }, 1500);
@@ -53,9 +53,9 @@
              <div className="w-10 h-10 rounded-xl bg-gradient-hero flex items-center justify-center">
                <BookOpen className="w-5 h-5 text-white" />
              </div>
-             <span className="font-display font-bold text-xl text-foreground">
-               English <span className="text-primary">Path</span>
-             </span>
+              <span className="font-display font-bold text-xl text-foreground">
+                Inglês <span className="text-primary">Hope</span>
+              </span>
            </div>
  
            {/* Header */}

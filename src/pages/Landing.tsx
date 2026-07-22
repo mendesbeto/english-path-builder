@@ -149,9 +149,9 @@ import heroImage from "@/assets/hero-illustration.png";
              viewport={{ once: true }}
              className="text-center mb-12"
            >
-             <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
-               Por que escolher o English Path?
-             </h2>
+              <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-4">
+                Por que escolher o Inglês Hope?
+              </h2>
              <p className="text-muted-foreground max-w-2xl mx-auto">
                Uma plataforma completa para você dominar o inglês
              </p>
@@ -257,13 +257,13 @@ import heroImage from "@/assets/hero-illustration.png";
                <div className="w-8 h-8 rounded-lg bg-gradient-hero flex items-center justify-center">
                  <BookOpen className="w-4 h-4 text-white" />
                </div>
-               <span className="font-display font-bold text-foreground">
-                 English Path
-               </span>
+                <span className="font-display font-bold text-foreground">
+                  Inglês Hope
+                </span>
              </div>
-             <p className="text-sm text-muted-foreground">
-               © 2024 English Path. Projeto Acadêmico.
-             </p>
+              <p className="text-sm text-muted-foreground">
+                © 2024 Inglês Hope. Projeto Acadêmico.
+              </p>
            </div>
          </div>
        </footer>
