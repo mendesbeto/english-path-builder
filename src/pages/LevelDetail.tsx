@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
-import { Loader2, Play, FileText, Headphones, Mic, PenLine, HelpCircle, Award, CheckCircle2 } from "lucide-react";
+import { Loader2, Play, FileText, Headphones, Mic, PenLine, HelpCircle, Award, CheckCircle2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import PronunciationRecorder from "@/components/PronunciationRecorder";
 
 const typeIcons: Record<string, any> = {
   text: FileText, video: Play, audio: Headphones, quiz: HelpCircle,
@@ -18,6 +19,7 @@ export default function LevelDetail() {
   const [modules, setModules] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
+  const [openLesson, setOpenLesson] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
