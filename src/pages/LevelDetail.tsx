@@ -80,18 +80,44 @@ export default function LevelDetail() {
                   {modLessons.map(lesson => {
                     const Icon = typeIcons[lesson.type] ?? FileText;
                     const isDone = completed.has(lesson.id);
+                    const isSpeaking = lesson.type === "speaking";
+                    const isOpen = openLesson === lesson.id;
                     return (
-                      <div key={lesson.id} className="p-4 rounded-xl border border-border bg-card flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDone ? "bg-primary/20" : "bg-muted"}`}>
-                          {isDone ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Icon className="w-5 h-5 text-muted-foreground" />}
+                      <div key={lesson.id} className="rounded-xl border border-border bg-card overflow-hidden">
+                        <div className="p-4 flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDone ? "bg-primary/20" : "bg-muted"}`}>
+                            {isDone ? <CheckCircle2 className="w-5 h-5 text-primary" /> : <Icon className="w-5 h-5 text-muted-foreground" />}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">{lesson.title}</h4>
+                            <p className="text-xs text-muted-foreground">{lesson.type} · {lesson.duration_minutes} min</p>
+                          </div>
+                          {isSpeaking && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => setOpenLesson(isOpen ? null : lesson.id)}
+                            >
+                              <Mic className="w-4 h-4" />
+                              {isOpen ? "Fechar" : "Praticar"}
+                              <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                            </Button>
+                          )}
+                          <Button variant={isDone ? "outline" : "default"} size="sm" onClick={() => markComplete(lesson.id)}>
+                            {isDone ? "Concluído" : "Marcar concluído"}
+                          </Button>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium">{lesson.title}</h4>
-                          <p className="text-xs text-muted-foreground">{lesson.type} · {lesson.duration_minutes} min</p>
-                        </div>
-                        <Button variant={isDone ? "outline" : "default"} size="sm" onClick={() => markComplete(lesson.id)}>
-                          {isDone ? "Concluído" : "Marcar concluído"}
-                        </Button>
+                        {isSpeaking && isOpen && (
+                          <div className="px-4 pb-4">
+                            {lesson.content && (
+                              <div className="mb-3 text-sm text-muted-foreground whitespace-pre-wrap bg-muted/40 rounded-lg p-3">
+                                {lesson.content}
+                              </div>
+                            )}
+                            <PronunciationRecorder lessonId={lesson.id} />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
