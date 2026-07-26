@@ -262,6 +262,41 @@ export type Database = {
         }
         Relationships: []
       }
+      pronunciation_recordings: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          id: string
+          lesson_id: string
+          storage_path: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          lesson_id: string
+          storage_path: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          lesson_id?: string
+          storage_path?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pronunciation_recordings_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
