@@ -9,7 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
+const DEMO_ACCOUNTS = [
+  { label: "Aluno", email: "aluno@demo.com" },
+  { label: "Professor", email: "professor@demo.com" },
+  { label: "Admin", email: "admin@demo.com" },
+];
+const DEMO_PASSWORD = "demo1234";
+
 export default function Login() {
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
