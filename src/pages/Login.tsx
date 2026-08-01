@@ -38,7 +38,20 @@ export default function Login() {
     navigate("/dashboard");
   };
 
+  const handleDemo = async (demoEmail: string) => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: DEMO_PASSWORD });
+    setIsLoading(false);
+    if (error) {
+      toast({ title: "Erro na conta demo", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Modo demonstração", description: `Conectado como ${demoEmail}` });
+    navigate("/dashboard");
+  };
+
   const handleGoogle = async () => {
+
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
