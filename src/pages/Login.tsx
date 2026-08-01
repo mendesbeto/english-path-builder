@@ -91,10 +91,30 @@ export default function Login() {
             Continuar com Google
           </Button>
 
+          <div className="mt-8 rounded-xl border border-dashed border-border p-4">
+            <p className="text-sm font-medium mb-1">Contas de demonstração</p>
+            <p className="text-xs text-muted-foreground mb-3">Entre com um perfil pronto para testar o app (senha: demo1234).</p>
+            <div className="grid grid-cols-3 gap-2">
+              {DEMO_ACCOUNTS.map(acc => (
+                <Button
+                  key={acc.email}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isLoading}
+                  onClick={() => handleDemo(acc.email)}
+                >
+                  {acc.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <p className="text-center text-sm text-muted-foreground mt-8">
             Não tem uma conta?{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">Cadastre-se grátis</Link>
           </p>
+
         </motion.div>
       </div>
       <div className="hidden lg:flex flex-1 bg-gradient-hero items-center justify-center p-12">
