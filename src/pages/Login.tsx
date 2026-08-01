@@ -9,7 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
+const DEMO_ACCOUNTS = [
+  { label: "Aluno", email: "aluno@demo.com" },
+  { label: "Professor", email: "professor@demo.com" },
+  { label: "Admin", email: "admin@demo.com" },
+];
+const DEMO_PASSWORD = "demo1234";
+
 export default function Login() {
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +38,20 @@ export default function Login() {
     navigate("/dashboard");
   };
 
+  const handleDemo = async (demoEmail: string) => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email: demoEmail, password: DEMO_PASSWORD });
+    setIsLoading(false);
+    if (error) {
+      toast({ title: "Erro na conta demo", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Modo demonstração", description: `Conectado como ${demoEmail}` });
+    navigate("/dashboard");
+  };
+
   const handleGoogle = async () => {
+
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
@@ -91,10 +112,30 @@ export default function Login() {
             Continuar com Google
           </Button>
 
+          <div className="mt-8 rounded-xl border border-dashed border-border p-4">
+            <p className="text-sm font-medium mb-1">Contas de demonstração</p>
+            <p className="text-xs text-muted-foreground mb-3">Entre com um perfil pronto para testar o app (senha: demo1234).</p>
+            <div className="grid grid-cols-3 gap-2">
+              {DEMO_ACCOUNTS.map(acc => (
+                <Button
+                  key={acc.email}
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isLoading}
+                  onClick={() => handleDemo(acc.email)}
+                >
+                  {acc.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <p className="text-center text-sm text-muted-foreground mt-8">
             Não tem uma conta?{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">Cadastre-se grátis</Link>
           </p>
+
         </motion.div>
       </div>
       <div className="hidden lg:flex flex-1 bg-gradient-hero items-center justify-center p-12">
