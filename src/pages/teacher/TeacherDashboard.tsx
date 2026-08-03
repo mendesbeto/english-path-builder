@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, Plus, Users, Target, TrendingUp, Award } from "lucide-react";
+import { BookOpen, Plus, Users, Target, TrendingUp, Award, Search } from "lucide-react";
 
 type StudentRow = {
   id: string;
@@ -38,6 +38,9 @@ export default function TeacherDashboard() {
   const [totalLessons, setTotalLessons] = useState(0);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
     if (!user) return;
@@ -95,6 +98,20 @@ export default function TeacherDashboard() {
     ).length;
     return { totalCompleted, avg, active };
   }, [students]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return students.filter((s) => {
+      if (levelFilter !== "all" && s.level !== levelFilter) return false;
+      if (q && !s.name.toLowerCase().includes(q)) return false;
+      if (statusFilter !== "all") {
+        const active = !!s.lastActivity && Date.now() - new Date(s.lastActivity).getTime() < 7 * 864e5;
+        if (statusFilter === "active" && !active) return false;
+        if (statusFilter === "inactive" && active) return false;
+      }
+      return true;
+    });
+  }, [students, search, levelFilter, statusFilter]);
 
   const byLevel = useMemo(
     () =>
