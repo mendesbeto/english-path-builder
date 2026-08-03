@@ -277,14 +277,16 @@ export default function TeacherDashboard() {
                     </td>
                   </tr>
                 )}
-                {!loading && students.length === 0 && (
+                {!loading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-5 py-6 text-muted-foreground">
-                      Nenhum aluno cadastrado ainda.
+                      {students.length === 0
+                        ? "Nenhum aluno cadastrado ainda."
+                        : "Nenhum aluno encontrado com esses filtros."}
                     </td>
                   </tr>
                 )}
-                {students.map((s) => {
+                {filtered.map((s) => {
                   const pct = totalLessons ? Math.min(100, Math.round((s.completed / totalLessons) * 100)) : 0;
                   return (
                     <tr key={s.id} className="border-t">
