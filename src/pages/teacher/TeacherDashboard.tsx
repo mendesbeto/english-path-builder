@@ -202,10 +202,60 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="rounded-xl bg-card border overflow-hidden">
-          <div className="p-5 border-b">
-            <h2 className="font-display font-semibold">Progresso detalhado dos alunos</h2>
-            <p className="text-sm text-muted-foreground">Desempenho individual e última atividade registrada.</p>
+          <div className="p-5 border-b space-y-4">
+            <div>
+              <h2 className="font-display font-semibold">Progresso detalhado dos alunos</h2>
+              <p className="text-sm text-muted-foreground">Desempenho individual e última atividade registrada.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar aluno pelo nome..."
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <select
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">Todos os níveis</option>
+                {LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    Nível {l}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">Qualquer atividade</option>
+                <option value="active">Ativos na semana</option>
+                <option value="inactive">Inativos na semana</option>
+              </select>
+              {(search || levelFilter !== "all" || statusFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setLevelFilter("all");
+                    setStatusFilter("all");
+                  }}
+                  className="px-3 py-2 rounded-lg border text-sm text-muted-foreground hover:bg-muted"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filtered.length} de {students.length} alunos
+            </p>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
