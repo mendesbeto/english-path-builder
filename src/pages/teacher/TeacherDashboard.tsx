@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { BookOpen, Plus, Users, Target, TrendingUp, Award } from "lucide-react";
+import { BookOpen, Plus, Users, Target, TrendingUp, Award, Search } from "lucide-react";
 
 type StudentRow = {
   id: string;
@@ -38,6 +38,9 @@ export default function TeacherDashboard() {
   const [totalLessons, setTotalLessons] = useState(0);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
     if (!user) return;
@@ -95,6 +98,20 @@ export default function TeacherDashboard() {
     ).length;
     return { totalCompleted, avg, active };
   }, [students]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return students.filter((s) => {
+      if (levelFilter !== "all" && s.level !== levelFilter) return false;
+      if (q && !s.name.toLowerCase().includes(q)) return false;
+      if (statusFilter !== "all") {
+        const active = !!s.lastActivity && Date.now() - new Date(s.lastActivity).getTime() < 7 * 864e5;
+        if (statusFilter === "active" && !active) return false;
+        if (statusFilter === "inactive" && active) return false;
+      }
+      return true;
+    });
+  }, [students, search, levelFilter, statusFilter]);
 
   const byLevel = useMemo(
     () =>
@@ -185,10 +202,60 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="rounded-xl bg-card border overflow-hidden">
-          <div className="p-5 border-b">
-            <h2 className="font-display font-semibold">Progresso detalhado dos alunos</h2>
-            <p className="text-sm text-muted-foreground">Desempenho individual e última atividade registrada.</p>
+          <div className="p-5 border-b space-y-4">
+            <div>
+              <h2 className="font-display font-semibold">Progresso detalhado dos alunos</h2>
+              <p className="text-sm text-muted-foreground">Desempenho individual e última atividade registrada.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar aluno pelo nome..."
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <select
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">Todos os níveis</option>
+                {LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    Nível {l}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">Qualquer atividade</option>
+                <option value="active">Ativos na semana</option>
+                <option value="inactive">Inativos na semana</option>
+              </select>
+              {(search || levelFilter !== "all" || statusFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setLevelFilter("all");
+                    setStatusFilter("all");
+                  }}
+                  className="px-3 py-2 rounded-lg border text-sm text-muted-foreground hover:bg-muted"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filtered.length} de {students.length} alunos
+            </p>
           </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-muted-foreground">
@@ -210,14 +277,16 @@ export default function TeacherDashboard() {
                     </td>
                   </tr>
                 )}
-                {!loading && students.length === 0 && (
+                {!loading && filtered.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-5 py-6 text-muted-foreground">
-                      Nenhum aluno cadastrado ainda.
+                      {students.length === 0
+                        ? "Nenhum aluno cadastrado ainda."
+                        : "Nenhum aluno encontrado com esses filtros."}
                     </td>
                   </tr>
                 )}
-                {students.map((s) => {
+                {filtered.map((s) => {
                   const pct = totalLessons ? Math.min(100, Math.round((s.completed / totalLessons) * 100)) : 0;
                   return (
                     <tr key={s.id} className="border-t">
