@@ -16,6 +16,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminLevels from "./pages/admin/AdminLevels";
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import TeacherLessons from "./pages/teacher/TeacherLessons";
+import TeacherClasses from "./pages/teacher/TeacherClasses";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
 
             <Route path="/teacher" element={<ProtectedRoute allow={["teacher","admin"]}><TeacherDashboard /></ProtectedRoute>} />
             <Route path="/teacher/lessons" element={<ProtectedRoute allow={["teacher","admin"]}><TeacherLessons /></ProtectedRoute>} />
+            <Route path="/teacher/classes" element={<ProtectedRoute allow={["teacher","admin"]}><TeacherClasses /></ProtectedRoute>} />
 
             <Route path="/admin" element={<ProtectedRoute allow={["admin"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allow={["admin"]}><AdminUsers /></ProtectedRoute>} />
