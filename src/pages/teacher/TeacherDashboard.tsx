@@ -42,27 +42,40 @@ export default function TeacherDashboard() {
   const [myLessons, setMyLessons] = useState(0);
   const [totalLessons, setTotalLessons] = useState(0);
   const [students, setStudents] = useState<StudentRow[]>([]);
+  const [classes, setClasses] = useState<ClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       setLoading(true);
-      const [{ count: mine }, { count: all }, { data: roles }, { data: profiles }, { data: progress }] =
-        await Promise.all([
-          supabase.from("lessons").select("*", { count: "exact", head: true }).eq("created_by", user.id),
-          supabase.from("lessons").select("*", { count: "exact", head: true }),
-          supabase.from("user_roles").select("user_id, role").eq("role", "student"),
-          supabase.from("profiles").select("id, full_name, current_level, points, streak_days"),
-          supabase.from("lesson_progress").select("student_id, completed, score, completed_at"),
-        ]);
+      const [
+        { count: mine },
+        { count: all },
+        { data: roles },
+        { data: profiles },
+        { data: progress },
+        { data: classRows },
+        { data: enrollments },
+      ] = await Promise.all([
+        supabase.from("lessons").select("*", { count: "exact", head: true }).eq("created_by", user.id),
+        supabase.from("lessons").select("*", { count: "exact", head: true }),
+        supabase.from("user_roles").select("user_id, role").eq("role", "student"),
+        supabase.from("profiles").select("id, full_name, current_level, points, streak_days"),
+        supabase.from("lesson_progress").select("student_id, completed, score, completed_at"),
+        supabase.from("classes").select("id, name").order("name"),
+        supabase.from("class_students").select("class_id, student_id"),
+      ]);
 
       setMyLessons(mine ?? 0);
       setTotalLessons(all ?? 0);
+      setClasses(classRows ?? []);
 
+      const classNameById = new Map((classRows ?? []).map((c) => [c.id, c.name]));
       const studentIds = new Set((roles ?? []).map((r) => r.user_id));
       const rows: StudentRow[] = (profiles ?? [])
         .filter((p) => studentIds.has(p.id))
@@ -74,6 +87,7 @@ export default function TeacherDashboard() {
             .filter(Boolean)
             .sort()
             .pop() as string | undefined;
+          const classIds = (enrollments ?? []).filter((e) => e.student_id === p.id).map((e) => e.class_id);
           return {
             id: p.id,
             name: p.full_name ?? "Sem nome",
@@ -83,12 +97,15 @@ export default function TeacherDashboard() {
             completed: items.length,
             avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
             lastActivity: last ?? null,
+            classIds,
+            classNames: classIds.map((id) => classNameById.get(id) ?? "—"),
           };
         })
         .sort((a, b) => b.completed - a.completed);
 
       setStudents(rows);
       setLoading(false);
+
     })();
   }, [user]);
 
