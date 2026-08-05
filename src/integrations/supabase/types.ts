@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      class_students: {
+        Row: {
+          class_id: string
+          created_at: string
+          enrolled_at: string
+          id: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          enrolled_at?: string
+          id?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          enrolled_at?: string
+          id?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          level_code: Database["public"]["Enums"]["level_code"] | null
+          name: string
+          teacher_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          level_code?: Database["public"]["Enums"]["level_code"] | null
+          name: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          level_code?: Database["public"]["Enums"]["level_code"] | null
+          name?: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           correct_answer: string

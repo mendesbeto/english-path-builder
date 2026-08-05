@@ -14,7 +14,12 @@ type StudentRow = {
   completed: number;
   avgScore: number;
   lastActivity: string | null;
+  classIds: string[];
+  classNames: string[];
 };
+
+type ClassRow = { id: string; name: string };
+
 
 const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 
@@ -37,27 +42,40 @@ export default function TeacherDashboard() {
   const [myLessons, setMyLessons] = useState(0);
   const [totalLessons, setTotalLessons] = useState(0);
   const [students, setStudents] = useState<StudentRow[]>([]);
+  const [classes, setClasses] = useState<ClassRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       setLoading(true);
-      const [{ count: mine }, { count: all }, { data: roles }, { data: profiles }, { data: progress }] =
-        await Promise.all([
-          supabase.from("lessons").select("*", { count: "exact", head: true }).eq("created_by", user.id),
-          supabase.from("lessons").select("*", { count: "exact", head: true }),
-          supabase.from("user_roles").select("user_id, role").eq("role", "student"),
-          supabase.from("profiles").select("id, full_name, current_level, points, streak_days"),
-          supabase.from("lesson_progress").select("student_id, completed, score, completed_at"),
-        ]);
+      const [
+        { count: mine },
+        { count: all },
+        { data: roles },
+        { data: profiles },
+        { data: progress },
+        { data: classRows },
+        { data: enrollments },
+      ] = await Promise.all([
+        supabase.from("lessons").select("*", { count: "exact", head: true }).eq("created_by", user.id),
+        supabase.from("lessons").select("*", { count: "exact", head: true }),
+        supabase.from("user_roles").select("user_id, role").eq("role", "student"),
+        supabase.from("profiles").select("id, full_name, current_level, points, streak_days"),
+        supabase.from("lesson_progress").select("student_id, completed, score, completed_at"),
+        supabase.from("classes").select("id, name").order("name"),
+        supabase.from("class_students").select("class_id, student_id"),
+      ]);
 
       setMyLessons(mine ?? 0);
       setTotalLessons(all ?? 0);
+      setClasses(classRows ?? []);
 
+      const classNameById = new Map((classRows ?? []).map((c) => [c.id, c.name]));
       const studentIds = new Set((roles ?? []).map((r) => r.user_id));
       const rows: StudentRow[] = (profiles ?? [])
         .filter((p) => studentIds.has(p.id))
@@ -69,6 +87,7 @@ export default function TeacherDashboard() {
             .filter(Boolean)
             .sort()
             .pop() as string | undefined;
+          const classIds = (enrollments ?? []).filter((e) => e.student_id === p.id).map((e) => e.class_id);
           return {
             id: p.id,
             name: p.full_name ?? "Sem nome",
@@ -78,12 +97,15 @@ export default function TeacherDashboard() {
             completed: items.length,
             avgScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
             lastActivity: last ?? null,
+            classIds,
+            classNames: classIds.map((id) => classNameById.get(id) ?? "—"),
           };
         })
         .sort((a, b) => b.completed - a.completed);
 
       setStudents(rows);
       setLoading(false);
+
     })();
   }, [user]);
 
@@ -103,6 +125,8 @@ export default function TeacherDashboard() {
     const q = search.trim().toLowerCase();
     return students.filter((s) => {
       if (levelFilter !== "all" && s.level !== levelFilter) return false;
+      if (classFilter === "none" && s.classIds.length > 0) return false;
+      if (classFilter !== "all" && classFilter !== "none" && !s.classIds.includes(classFilter)) return false;
       if (q && !s.name.toLowerCase().includes(q)) return false;
       if (statusFilter !== "all") {
         const active = !!s.lastActivity && Date.now() - new Date(s.lastActivity).getTime() < 7 * 864e5;
@@ -111,7 +135,7 @@ export default function TeacherDashboard() {
       }
       return true;
     });
-  }, [students, search, levelFilter, statusFilter]);
+  }, [students, search, levelFilter, classFilter, statusFilter]);
 
   const byLevel = useMemo(
     () =>
@@ -230,6 +254,19 @@ export default function TeacherDashboard() {
                 ))}
               </select>
               <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">Todas as turmas</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value="none">Sem turma</option>
+              </select>
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
                 className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -238,11 +275,12 @@ export default function TeacherDashboard() {
                 <option value="active">Ativos na semana</option>
                 <option value="inactive">Inativos na semana</option>
               </select>
-              {(search || levelFilter !== "all" || statusFilter !== "all") && (
+              {(search || levelFilter !== "all" || classFilter !== "all" || statusFilter !== "all") && (
                 <button
                   onClick={() => {
                     setSearch("");
                     setLevelFilter("all");
+                    setClassFilter("all");
                     setStatusFilter("all");
                   }}
                   className="px-3 py-2 rounded-lg border text-sm text-muted-foreground hover:bg-muted"
@@ -262,6 +300,7 @@ export default function TeacherDashboard() {
                 <tr>
                   <th className="text-left font-medium px-5 py-3">Aluno</th>
                   <th className="text-left font-medium px-5 py-3">Nível</th>
+                  <th className="text-left font-medium px-5 py-3">Turma</th>
                   <th className="text-left font-medium px-5 py-3">Aulas concluídas</th>
                   <th className="text-left font-medium px-5 py-3">Média</th>
                   <th className="text-left font-medium px-5 py-3">Pontos</th>
@@ -272,14 +311,14 @@ export default function TeacherDashboard() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-6 text-muted-foreground">
+                    <td colSpan={8} className="px-5 py-6 text-muted-foreground">
                       Carregando...
                     </td>
                   </tr>
                 )}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-6 text-muted-foreground">
+                    <td colSpan={8} className="px-5 py-6 text-muted-foreground">
                       {students.length === 0
                         ? "Nenhum aluno cadastrado ainda."
                         : "Nenhum aluno encontrado com esses filtros."}
@@ -295,6 +334,9 @@ export default function TeacherDashboard() {
                         <span className={`text-xs font-semibold rounded-md border px-2 py-1 ${levelClass[s.level]}`}>
                           {s.level}
                         </span>
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground">
+                        {s.classNames.length ? s.classNames.join(", ") : "—"}
                       </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
