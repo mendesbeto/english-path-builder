@@ -335,6 +335,9 @@ export default function TeacherDashboard() {
                           {s.level}
                         </span>
                       </td>
+                      <td className="px-5 py-3 text-muted-foreground">
+                        {s.classNames.length ? s.classNames.join(", ") : "—"}
+                      </td>
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 rounded-full bg-muted overflow-hidden">
