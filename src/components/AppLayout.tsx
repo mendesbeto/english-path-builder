@@ -20,6 +20,7 @@ function AppSidebar() {
   const teacherItems = [
     { title: "Painel Professor", url: "/teacher", icon: GraduationCap },
     { title: "Aulas & Conteúdo", url: "/teacher/lessons", icon: BookOpen },
+    { title: "Turmas", url: "/teacher/classes", icon: Users },
   ];
   const adminItems = [
     { title: "Painel Admin", url: "/admin", icon: ShieldCheck },
