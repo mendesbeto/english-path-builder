@@ -311,14 +311,14 @@ export default function TeacherDashboard() {
               <tbody>
                 {loading && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-6 text-muted-foreground">
+                    <td colSpan={8} className="px-5 py-6 text-muted-foreground">
                       Carregando...
                     </td>
                   </tr>
                 )}
                 {!loading && filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-5 py-6 text-muted-foreground">
+                    <td colSpan={8} className="px-5 py-6 text-muted-foreground">
                       {students.length === 0
                         ? "Nenhum aluno cadastrado ainda."
                         : "Nenhum aluno encontrado com esses filtros."}
