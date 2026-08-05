@@ -125,6 +125,8 @@ export default function TeacherDashboard() {
     const q = search.trim().toLowerCase();
     return students.filter((s) => {
       if (levelFilter !== "all" && s.level !== levelFilter) return false;
+      if (classFilter === "none" && s.classIds.length > 0) return false;
+      if (classFilter !== "all" && classFilter !== "none" && !s.classIds.includes(classFilter)) return false;
       if (q && !s.name.toLowerCase().includes(q)) return false;
       if (statusFilter !== "all") {
         const active = !!s.lastActivity && Date.now() - new Date(s.lastActivity).getTime() < 7 * 864e5;
@@ -133,7 +135,7 @@ export default function TeacherDashboard() {
       }
       return true;
     });
-  }, [students, search, levelFilter, statusFilter]);
+  }, [students, search, levelFilter, classFilter, statusFilter]);
 
   const byLevel = useMemo(
     () =>
