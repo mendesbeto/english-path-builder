@@ -300,6 +300,7 @@ export default function TeacherDashboard() {
                 <tr>
                   <th className="text-left font-medium px-5 py-3">Aluno</th>
                   <th className="text-left font-medium px-5 py-3">Nível</th>
+                  <th className="text-left font-medium px-5 py-3">Turma</th>
                   <th className="text-left font-medium px-5 py-3">Aulas concluídas</th>
                   <th className="text-left font-medium px-5 py-3">Média</th>
                   <th className="text-left font-medium px-5 py-3">Pontos</th>
