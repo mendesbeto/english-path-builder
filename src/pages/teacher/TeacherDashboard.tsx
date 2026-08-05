@@ -254,6 +254,19 @@ export default function TeacherDashboard() {
                 ))}
               </select>
               <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="all">Todas as turmas</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+                <option value="none">Sem turma</option>
+              </select>
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
                 className="px-3 py-2 rounded-lg bg-background border text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -262,11 +275,12 @@ export default function TeacherDashboard() {
                 <option value="active">Ativos na semana</option>
                 <option value="inactive">Inativos na semana</option>
               </select>
-              {(search || levelFilter !== "all" || statusFilter !== "all") && (
+              {(search || levelFilter !== "all" || classFilter !== "all" || statusFilter !== "all") && (
                 <button
                   onClick={() => {
                     setSearch("");
                     setLevelFilter("all");
+                    setClassFilter("all");
                     setStatusFilter("all");
                   }}
                   className="px-3 py-2 rounded-lg border text-sm text-muted-foreground hover:bg-muted"
