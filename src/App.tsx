@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Levels from "./pages/Levels";
 import LevelDetail from "./pages/LevelDetail";
+import MyClasses from "./pages/MyClasses";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminLevels from "./pages/admin/AdminLevels";
@@ -36,6 +37,8 @@ const App = () => (
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/levels" element={<ProtectedRoute><Levels /></ProtectedRoute>} />
             <Route path="/levels/:levelId" element={<ProtectedRoute><LevelDetail /></ProtectedRoute>} />
+            <Route path="/my-classes" element={<ProtectedRoute><MyClasses /></ProtectedRoute>} />
+
 
             <Route path="/teacher" element={<ProtectedRoute allow={["teacher","admin"]}><TeacherDashboard /></ProtectedRoute>} />
             <Route path="/teacher/lessons" element={<ProtectedRoute allow={["teacher","admin"]}><TeacherLessons /></ProtectedRoute>} />

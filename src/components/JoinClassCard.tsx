@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Ticket } from "lucide-react";
 
-export default function JoinClassCard() {
+export default function JoinClassCard({ onJoined }: { onJoined?: () => void | Promise<void> }) {
   const { toast } = useToast();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,7 @@ export default function JoinClassCard() {
     const name = (data as any)?.[0]?.class_name ?? "turma";
     setCode("");
     toast({ title: "Matrícula concluída", description: `Você entrou na turma ${name}.` });
+    await onJoined?.();
   };
 
   return (
