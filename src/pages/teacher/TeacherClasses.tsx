@@ -131,6 +131,24 @@ export default function TeacherClasses() {
     load();
   };
 
+  const copyInvite = async (c: ClassRow) => {
+    const text = `Entre na turma "${c.name}" no Inglês Hope usando o código: ${c.join_code}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Convite copiado" });
+    } catch {
+      toast({ title: "Código", description: c.join_code });
+    }
+  };
+
+  const regenerate = async (c: ClassRow) => {
+    if (!confirm("Gerar um novo código? O código anterior deixará de funcionar.")) return;
+    const { data, error } = await supabase.rpc("regenerate_class_join_code", { _class_id: c.id });
+    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    toast({ title: "Novo código gerado", description: String(data) });
+    load();
+  };
+
   if (loading) {
     return (
       <AppLayout>
