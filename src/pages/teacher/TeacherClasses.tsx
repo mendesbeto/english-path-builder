@@ -224,6 +224,25 @@ export default function TeacherClasses() {
                   </Button>
                 </div>
 
+                <div className="rounded-lg border border-border bg-muted/40 p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <Ticket className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Código de convite</p>
+                      <p className="font-mono text-lg font-bold tracking-widest">{selected.join_code}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => copyInvite(selected)}>
+                      <Copy className="h-4 w-4 mr-2" /> Copiar convite
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => regenerate(selected)}>
+                      <RefreshCw className="h-4 w-4 mr-2" /> Novo código
+                    </Button>
+                  </div>
+                </div>
+
+
                 {enrolled.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum aluno matriculado nesta turma.</p>
                 ) : (
