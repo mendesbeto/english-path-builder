@@ -77,6 +77,7 @@ export default function Dashboard() {
             ))}
           </div>
 
+          <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-card border border-border">
             <h3 className="text-lg font-display font-bold mb-4 text-center">Progresso Geral</h3>
             <div className="flex justify-center mb-4">
@@ -93,6 +94,8 @@ export default function Dashboard() {
             <Link to="/levels" className="block mt-4">
               <Button variant="outline" className="w-full">Ver todos os níveis</Button>
             </Link>
+          </div>
+          {role === "student" && <JoinClassCard />}
           </div>
         </div>
       </div>
