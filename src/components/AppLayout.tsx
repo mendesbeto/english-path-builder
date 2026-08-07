@@ -16,6 +16,7 @@ function AppSidebar() {
   const studentItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Níveis", url: "/levels", icon: BookMarked },
+    { title: "Minhas Turmas", url: "/my-classes", icon: Users },
   ];
   const teacherItems = [
     { title: "Painel Professor", url: "/teacher", icon: GraduationCap },
