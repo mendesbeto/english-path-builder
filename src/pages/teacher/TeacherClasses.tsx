@@ -20,6 +20,7 @@ type ClassRow = {
   level_code: string | null;
   teacher_id: string | null;
   is_active: boolean;
+  join_code: string;
 };
 
 export default function TeacherClasses() {
