@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AppLayout from "@/components/AppLayout";
 import { ProgressRing } from "@/components/ProgressRing";
+import JoinClassCard from "@/components/JoinClassCard";
 
 const levelColors: Record<string, string> = {
   A1: "#22C55E", A2: "#EAB308", B1: "#3B82F6", B2: "#A855F7", C1: "#EF4444", C2: "#0F172A",
@@ -76,6 +77,7 @@ export default function Dashboard() {
             ))}
           </div>
 
+          <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-card border border-border">
             <h3 className="text-lg font-display font-bold mb-4 text-center">Progresso Geral</h3>
             <div className="flex justify-center mb-4">
@@ -92,6 +94,8 @@ export default function Dashboard() {
             <Link to="/levels" className="block mt-4">
               <Button variant="outline" className="w-full">Ver todos os níveis</Button>
             </Link>
+          </div>
+          {role === "student" && <JoinClassCard />}
           </div>
         </div>
       </div>

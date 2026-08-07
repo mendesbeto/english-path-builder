@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Pencil, UserPlus, Users, X } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil, UserPlus, Users, X, Copy, RefreshCw, Ticket } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +20,7 @@ type ClassRow = {
   level_code: string | null;
   teacher_id: string | null;
   is_active: boolean;
+  join_code: string;
 };
 
 export default function TeacherClasses() {
@@ -130,6 +131,24 @@ export default function TeacherClasses() {
     load();
   };
 
+  const copyInvite = async (c: ClassRow) => {
+    const text = `Entre na turma "${c.name}" no Inglês Hope usando o código: ${c.join_code}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Convite copiado" });
+    } catch {
+      toast({ title: "Código", description: c.join_code });
+    }
+  };
+
+  const regenerate = async (c: ClassRow) => {
+    if (!confirm("Gerar um novo código? O código anterior deixará de funcionar.")) return;
+    const { data, error } = await supabase.rpc("regenerate_class_join_code", { _class_id: c.id });
+    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    toast({ title: "Novo código gerado", description: String(data) });
+    load();
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -204,6 +223,25 @@ export default function TeacherClasses() {
                     <UserPlus className="h-4 w-4 mr-2" /> Adicionar aluno
                   </Button>
                 </div>
+
+                <div className="rounded-lg border border-border bg-muted/40 p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <Ticket className="h-4 w-4 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Código de convite</p>
+                      <p className="font-mono text-lg font-bold tracking-widest">{selected.join_code}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => copyInvite(selected)}>
+                      <Copy className="h-4 w-4 mr-2" /> Copiar convite
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => regenerate(selected)}>
+                      <RefreshCw className="h-4 w-4 mr-2" /> Novo código
+                    </Button>
+                  </div>
+                </div>
+
 
                 {enrolled.length === 0 ? (
                   <p className="text-sm text-muted-foreground">Nenhum aluno matriculado nesta turma.</p>
