@@ -56,6 +56,9 @@ export type Database = {
           id: string
           is_active: boolean
           join_code: string
+          join_code_expires_at: string | null
+          join_code_max_uses: number | null
+          join_code_uses: number
           level_code: Database["public"]["Enums"]["level_code"] | null
           name: string
           teacher_id: string | null
@@ -67,6 +70,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           join_code?: string
+          join_code_expires_at?: string | null
+          join_code_max_uses?: number | null
+          join_code_uses?: number
           level_code?: Database["public"]["Enums"]["level_code"] | null
           name: string
           teacher_id?: string | null
@@ -78,6 +84,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           join_code?: string
+          join_code_expires_at?: string | null
+          join_code_max_uses?: number | null
+          join_code_uses?: number
           level_code?: Database["public"]["Enums"]["level_code"] | null
           name?: string
           teacher_id?: string | null
@@ -413,10 +422,16 @@ export type Database = {
           class_name: string
         }[]
       }
-      regenerate_class_join_code: {
-        Args: { _class_id: string }
-        Returns: string
-      }
+      regenerate_class_join_code:
+        | { Args: { _class_id: string }; Returns: string }
+        | {
+            Args: {
+              _class_id: string
+              _max_uses?: number
+              _valid_days?: number
+            }
+            Returns: string
+          }
     }
     Enums: {
       app_role: "admin" | "teacher" | "student"
