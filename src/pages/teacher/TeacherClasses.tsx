@@ -262,17 +262,35 @@ export default function TeacherClasses() {
                     <div>
                       <p className="text-xs text-muted-foreground">Código de convite</p>
                       <p className="font-mono text-lg font-bold tracking-widest">{selected.join_code}</p>
+                      <p className="text-xs mt-1 text-muted-foreground">
+                        {selected.join_code_expires_at
+                          ? `Expira em ${new Date(selected.join_code_expires_at).toLocaleString("pt-BR")}`
+                          : "Sem expiração"}
+                        {" · "}
+                        {selected.join_code_max_uses != null
+                          ? `${selected.join_code_uses}/${selected.join_code_max_uses} usos`
+                          : `${selected.join_code_uses} usos (ilimitado)`}
+                      </p>
+                      {(() => {
+                        const { expired, exhausted } = codeStatus(selected);
+                        return (expired || exhausted) ? (
+                          <p className="text-xs mt-1 text-destructive font-medium">
+                            {expired ? "Código expirado — gere um novo." : "Limite de usos atingido — gere um novo."}
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => copyInvite(selected)}>
                       <Copy className="h-4 w-4 mr-2" /> Copiar convite
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => regenerate(selected)}>
+                    <Button size="sm" variant="ghost" onClick={() => { setCodeForm({ validDays: "", maxUses: "" }); setCodeOpen(true); }}>
                       <RefreshCw className="h-4 w-4 mr-2" /> Novo código
                     </Button>
                   </div>
                 </div>
+
 
 
                 {enrolled.length === 0 ? (
