@@ -137,7 +137,21 @@ export default function TeacherClasses() {
     load();
   };
 
+  const codeStatus = (c: ClassRow) => {
+    const expired = c.join_code_expires_at ? new Date(c.join_code_expires_at) < new Date() : false;
+    const exhausted = c.join_code_max_uses != null && c.join_code_uses >= c.join_code_max_uses;
+    return { expired, exhausted, valid: !expired && !exhausted };
+  };
+
   const copyInvite = async (c: ClassRow) => {
+    const { expired, exhausted } = codeStatus(c);
+    if (expired || exhausted) {
+      return toast({
+        title: expired ? "Código expirado" : "Limite de usos atingido",
+        description: "Gere um novo código antes de compartilhar.",
+        variant: "destructive",
+      });
+    }
     const text = `Entre na turma "${c.name}" no Inglês Hope usando o código: ${c.join_code}`;
     try {
       await navigator.clipboard.writeText(text);
@@ -147,13 +161,25 @@ export default function TeacherClasses() {
     }
   };
 
-  const regenerate = async (c: ClassRow) => {
-    if (!confirm("Gerar um novo código? O código anterior deixará de funcionar.")) return;
-    const { data, error } = await supabase.rpc("regenerate_class_join_code", { _class_id: c.id });
+  const regenerate = async () => {
+    if (!selected) return;
+    const validDays = codeForm.validDays.trim() ? Number(codeForm.validDays) : null;
+    const maxUses = codeForm.maxUses.trim() ? Number(codeForm.maxUses) : null;
+    if ((validDays !== null && (!Number.isFinite(validDays) || validDays <= 0)) ||
+        (maxUses !== null && (!Number.isFinite(maxUses) || maxUses <= 0))) {
+      return toast({ title: "Valores inválidos", description: "Use números maiores que zero.", variant: "destructive" });
+    }
+    const { data, error } = await supabase.rpc("regenerate_class_join_code", {
+      _class_id: selected.id,
+      _valid_days: validDays,
+      _max_uses: maxUses,
+    });
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: "Novo código gerado", description: String(data) });
+    setCodeOpen(false);
     load();
   };
+
 
   if (loading) {
     return (
