@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AppLayout from "@/components/AppLayout";
 import JoinClassCard from "@/components/JoinClassCard";
+import ClassReport from "@/components/ClassReport";
+
 import { Loader2, Users } from "lucide-react";
 
 type ClassRow = {
