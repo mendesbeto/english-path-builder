@@ -21,6 +21,9 @@ type ClassRow = {
   teacher_id: string | null;
   is_active: boolean;
   join_code: string;
+  join_code_expires_at: string | null;
+  join_code_max_uses: number | null;
+  join_code_uses: number;
 };
 
 export default function TeacherClasses() {
