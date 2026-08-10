@@ -10,13 +10,28 @@ export default function JoinClassCard({ onJoined }: { onJoined?: () => void | Pr
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const describeError = (message: string) => {
+    const m = message.toLowerCase();
+    if (m.includes("inválido")) return "Código não encontrado. Confira as letras e números e tente novamente.";
+    if (m.includes("expirado")) return "Este código expirou. Peça um novo código ao seu professor.";
+    if (m.includes("limite")) return "Este código já atingiu o número máximo de usos. Peça um novo ao seu professor.";
+    if (m.includes("já está matriculado")) return "Você já está matriculado nesta turma.";
+    if (m.includes("não está mais ativa")) return "Esta turma foi desativada pelo professor.";
+    if (m.includes("não autenticado")) return "Faça login para entrar em uma turma.";
+    return message;
+  };
+
   const join = async () => {
     if (!code.trim()) return;
     setLoading(true);
     const { data, error } = await supabase.rpc("join_class_by_code", { _code: code.trim() });
     setLoading(false);
     if (error) {
-      return toast({ title: "Não foi possível entrar", description: error.message, variant: "destructive" });
+      return toast({
+        title: "Não foi possível entrar",
+        description: describeError(error.message),
+        variant: "destructive",
+      });
     }
     const name = (data as any)?.[0]?.class_name ?? "turma";
     setCode("");
