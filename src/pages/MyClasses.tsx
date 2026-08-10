@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import AppLayout from "@/components/AppLayout";
 import JoinClassCard from "@/components/JoinClassCard";
+import ClassReport from "@/components/ClassReport";
+
 import { Loader2, Users } from "lucide-react";
 
 type ClassRow = {
@@ -60,6 +62,14 @@ export default function MyClasses() {
             ))}
           </div>
         )}
+
+        {!loading && classes.length > 0 && user && (
+          <ClassReport
+            studentId={user.id}
+            classes={classes.map((c) => ({ id: c.id, name: c.name, level_code: c.level_code }))}
+          />
+        )}
+
       </div>
     </AppLayout>
   );
