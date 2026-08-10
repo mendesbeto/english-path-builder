@@ -21,6 +21,9 @@ type ClassRow = {
   teacher_id: string | null;
   is_active: boolean;
   join_code: string;
+  join_code_expires_at: string | null;
+  join_code_max_uses: number | null;
+  join_code_uses: number;
 };
 
 export default function TeacherClasses() {
@@ -38,8 +41,11 @@ export default function TeacherClasses() {
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeForm, setCodeForm] = useState({ validDays: "", maxUses: "" });
 
   const load = async () => {
+
     const [{ data: cls }, { data: roles }, { data: enr }] = await Promise.all([
       supabase.from("classes").select("*").order("created_at"),
       supabase.from("user_roles").select("user_id, role").eq("role", "student"),
@@ -131,7 +137,21 @@ export default function TeacherClasses() {
     load();
   };
 
+  const codeStatus = (c: ClassRow) => {
+    const expired = c.join_code_expires_at ? new Date(c.join_code_expires_at) < new Date() : false;
+    const exhausted = c.join_code_max_uses != null && c.join_code_uses >= c.join_code_max_uses;
+    return { expired, exhausted, valid: !expired && !exhausted };
+  };
+
   const copyInvite = async (c: ClassRow) => {
+    const { expired, exhausted } = codeStatus(c);
+    if (expired || exhausted) {
+      return toast({
+        title: expired ? "Código expirado" : "Limite de usos atingido",
+        description: "Gere um novo código antes de compartilhar.",
+        variant: "destructive",
+      });
+    }
     const text = `Entre na turma "${c.name}" no Inglês Hope usando o código: ${c.join_code}`;
     try {
       await navigator.clipboard.writeText(text);
@@ -141,13 +161,25 @@ export default function TeacherClasses() {
     }
   };
 
-  const regenerate = async (c: ClassRow) => {
-    if (!confirm("Gerar um novo código? O código anterior deixará de funcionar.")) return;
-    const { data, error } = await supabase.rpc("regenerate_class_join_code", { _class_id: c.id });
+  const regenerate = async () => {
+    if (!selected) return;
+    const validDays = codeForm.validDays.trim() ? Number(codeForm.validDays) : null;
+    const maxUses = codeForm.maxUses.trim() ? Number(codeForm.maxUses) : null;
+    if ((validDays !== null && (!Number.isFinite(validDays) || validDays <= 0)) ||
+        (maxUses !== null && (!Number.isFinite(maxUses) || maxUses <= 0))) {
+      return toast({ title: "Valores inválidos", description: "Use números maiores que zero.", variant: "destructive" });
+    }
+    const { data, error } = await supabase.rpc("regenerate_class_join_code", {
+      _class_id: selected.id,
+      _valid_days: validDays,
+      _max_uses: maxUses,
+    });
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     toast({ title: "Novo código gerado", description: String(data) });
+    setCodeOpen(false);
     load();
   };
+
 
   if (loading) {
     return (
@@ -230,17 +262,35 @@ export default function TeacherClasses() {
                     <div>
                       <p className="text-xs text-muted-foreground">Código de convite</p>
                       <p className="font-mono text-lg font-bold tracking-widest">{selected.join_code}</p>
+                      <p className="text-xs mt-1 text-muted-foreground">
+                        {selected.join_code_expires_at
+                          ? `Expira em ${new Date(selected.join_code_expires_at).toLocaleString("pt-BR")}`
+                          : "Sem expiração"}
+                        {" · "}
+                        {selected.join_code_max_uses != null
+                          ? `${selected.join_code_uses}/${selected.join_code_max_uses} usos`
+                          : `${selected.join_code_uses} usos (ilimitado)`}
+                      </p>
+                      {(() => {
+                        const { expired, exhausted } = codeStatus(selected);
+                        return (expired || exhausted) ? (
+                          <p className="text-xs mt-1 text-destructive font-medium">
+                            {expired ? "Código expirado — gere um novo." : "Limite de usos atingido — gere um novo."}
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => copyInvite(selected)}>
                       <Copy className="h-4 w-4 mr-2" /> Copiar convite
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => regenerate(selected)}>
+                    <Button size="sm" variant="ghost" onClick={() => { setCodeForm({ validDays: "", maxUses: "" }); setCodeOpen(true); }}>
                       <RefreshCw className="h-4 w-4 mr-2" /> Novo código
                     </Button>
                   </div>
                 </div>
+
 
 
                 {enrolled.length === 0 ? (
@@ -320,6 +370,31 @@ export default function TeacherClasses() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={codeOpen} onOpenChange={setCodeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerar novo código de convite</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O código anterior deixará de funcionar imediatamente. Deixe os campos em branco para um código sem expiração e sem limite de usos.
+          </p>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Validade (dias)</Label>
+              <Input type="number" min={1} value={codeForm.validDays} placeholder="Ex: 7"
+                onChange={(e) => setCodeForm({ ...codeForm, validDays: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Limite de usos</Label>
+              <Input type="number" min={1} value={codeForm.maxUses} placeholder="Ex: 30"
+                onChange={(e) => setCodeForm({ ...codeForm, maxUses: e.target.value })} />
+            </div>
+            <Button className="w-full" onClick={regenerate}>Gerar código</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 }
