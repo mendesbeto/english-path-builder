@@ -62,6 +62,14 @@ export default function MyClasses() {
             ))}
           </div>
         )}
+
+        {!loading && classes.length > 0 && user && (
+          <ClassReport
+            studentId={user.id}
+            classes={classes.map((c) => ({ id: c.id, name: c.name, level_code: c.level_code }))}
+          />
+        )}
+
       </div>
     </AppLayout>
   );
