@@ -41,8 +41,10 @@ export default function TeacherClasses() {
 
   const [enrollOpen, setEnrollOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [codeOpen, setCodeOpen] = useState(false);
+  const [codeForm, setCodeForm] = useState({ validDays: "", maxUses: "" });
 
-  const load = async () => {
+
     const [{ data: cls }, { data: roles }, { data: enr }] = await Promise.all([
       supabase.from("classes").select("*").order("created_at"),
       supabase.from("user_roles").select("user_id, role").eq("role", "student"),
