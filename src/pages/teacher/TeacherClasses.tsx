@@ -370,6 +370,31 @@ export default function TeacherClasses() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={codeOpen} onOpenChange={setCodeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerar novo código de convite</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            O código anterior deixará de funcionar imediatamente. Deixe os campos em branco para um código sem expiração e sem limite de usos.
+          </p>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Validade (dias)</Label>
+              <Input type="number" min={1} value={codeForm.validDays} placeholder="Ex: 7"
+                onChange={(e) => setCodeForm({ ...codeForm, validDays: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>Limite de usos</Label>
+              <Input type="number" min={1} value={codeForm.maxUses} placeholder="Ex: 30"
+                onChange={(e) => setCodeForm({ ...codeForm, maxUses: e.target.value })} />
+            </div>
+            <Button className="w-full" onClick={regenerate}>Gerar código</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </AppLayout>
   );
 }
