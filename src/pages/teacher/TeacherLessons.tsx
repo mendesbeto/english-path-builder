@@ -25,6 +25,7 @@ export default function TeacherLessons() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [exLesson, setExLesson] = useState<any>(null);
   const [form, setForm] = useState({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
   const { toast } = useToast();
 
