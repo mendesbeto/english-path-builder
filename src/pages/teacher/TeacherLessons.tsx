@@ -128,17 +128,31 @@ export default function TeacherLessons() {
         {!selModule && <p className="text-sm text-muted-foreground">Crie um módulo primeiro (Admin → Níveis & Módulos).</p>}
 
         <div className="space-y-2">
-          {currentLessons.map(l => (
-            <div key={l.id} className="p-4 rounded-xl border border-border bg-card flex items-center gap-3">
-              <div className="flex-1">
-                <div className="font-medium">{l.title}</div>
+          {currentLessons.map((l, i) => (
+            <div key={l.id} className="p-4 rounded-xl border border-border bg-card flex items-center gap-2">
+              <div className="flex flex-col">
+                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === currentLessons.length - 1} onClick={() => move(i, 1)}><ArrowDown className="w-3.5 h-3.5" /></Button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">{l.title}</div>
                 <p className="text-xs text-muted-foreground">{l.type} · {l.duration_minutes} min</p>
               </div>
+              <Button variant="ghost" size="icon" title="Exercícios" onClick={() => setExLesson(l)}><ListChecks className="w-4 h-4" /></Button>
+              <Link to={`/lesson/${l.id}`}><Button variant="ghost" size="icon" title="Pré-visualizar"><Eye className="w-4 h-4" /></Button></Link>
               <Button variant="ghost" size="icon" onClick={() => openEdit(l)}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => del(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </div>
           ))}
         </div>
+
+        <Dialog open={!!exLesson} onOpenChange={o => !o && setExLesson(null)}>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Exercícios</DialogTitle></DialogHeader>
+            {exLesson && <ExerciseEditor lessonId={exLesson.id} lessonTitle={exLesson.title} />}
+          </DialogContent>
+        </Dialog>
+
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-lg">
