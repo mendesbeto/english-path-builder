@@ -78,6 +78,19 @@ export default function TeacherLessons() {
     load();
   };
 
+  const move = async (index: number, dir: -1 | 1) => {
+    const list = [...currentLessons];
+    const target = index + dir;
+    if (target < 0 || target >= list.length) return;
+    const a = list[index], b = list[target];
+    await Promise.all([
+      supabase.from("lessons").update({ order_num: target }).eq("id", a.id),
+      supabase.from("lessons").update({ order_num: index }).eq("id", b.id),
+    ]);
+    load();
+  };
+
+
   if (loading) return <AppLayout><div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div></AppLayout>;
 
   return (
