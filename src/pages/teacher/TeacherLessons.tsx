@@ -27,6 +27,7 @@ export default function TeacherLessons() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [exLesson, setExLesson] = useState<any>(null);
+  const [template, setTemplate] = useState<LessonTemplate | null>(null);
   const [form, setForm] = useState({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
   const { toast } = useToast();
 
@@ -52,12 +53,19 @@ export default function TeacherLessons() {
 
   const openNew = () => {
     setEditing(null);
+    setTemplate(null);
     setForm({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
     setOpen(true);
   };
 
+  const applyTemplate = (t: LessonTemplate) => {
+    setTemplate(t);
+    setForm({ ...t.form });
+  };
+
   const openEdit = (l: any) => {
     setEditing(l);
+    setTemplate(null);
     setForm({ title: l.title, description: l.description ?? "", type: l.type, content: l.content ?? "", media_url: l.media_url ?? "", duration_minutes: l.duration_minutes ?? 10 });
     setOpen(true);
   };
@@ -65,12 +73,30 @@ export default function TeacherLessons() {
   const save = async () => {
     if (!selModule) return toast({ title: "Selecione um módulo", variant: "destructive" });
     const payload: any = { ...form, module_id: selModule, created_by: user?.id };
-    const { error } = editing
-      ? await supabase.from("lessons").update(payload).eq("id", editing.id)
-      : await supabase.from("lessons").insert({ ...payload, order_num: currentLessons.length });
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
-    toast({ title: editing ? "Aula atualizada" : "Aula criada" });
-    setOpen(false); load();
+    if (editing) {
+      const { error } = await supabase.from("lessons").update(payload).eq("id", editing.id);
+      if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Aula atualizada" });
+    } else {
+      const { data, error } = await supabase
+        .from("lessons")
+        .insert({ ...payload, order_num: currentLessons.length })
+        .select("id")
+        .single();
+      if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+      if (template?.exercises?.length && data?.id) {
+        await supabase.from("exercises").insert(
+          template.exercises.map((ex, i) => ({ ...ex, lesson_id: data.id, order_num: i })),
+        );
+      }
+      toast({
+        title: "Aula criada",
+        description: template?.exercises?.length
+          ? `${template.exercises.length} exercícios do template foram adicionados.`
+          : undefined,
+      });
+    }
+    setOpen(false); setTemplate(null); load();
   };
 
   const del = async (id: string) => {
