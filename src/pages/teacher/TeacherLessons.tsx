@@ -182,9 +182,32 @@ export default function TeacherLessons() {
 
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Editar" : "Nova"} aula</DialogTitle></DialogHeader>
             <div className="space-y-3">
+              {!editing && (
+                <div className="p-3 rounded-xl border border-dashed border-border space-y-2">
+                  <Label className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> Começar com um template</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {LESSON_TEMPLATES.map(t => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => applyTemplate(t)}
+                        className={`text-left p-2 rounded-lg border transition-colors ${template?.id === t.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted"}`}
+                      >
+                        <span className="text-sm font-medium">{t.emoji} {t.label}</span>
+                        <p className="text-xs text-muted-foreground">{t.description}</p>
+                      </button>
+                    ))}
+                  </div>
+                  {template?.exercises?.length ? (
+                    <p className="text-xs text-muted-foreground">
+                      Inclui {template.exercises.length} exercícios prontos, criados junto com a aula.
+                    </p>
+                  ) : null}
+                </div>
+              )}
               <div><Label>Título</Label><Input value={form.title} onChange={e => setForm({...form, title: e.target.value})} /></div>
               <div><Label>Descrição</Label><Textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} /></div>
               <div className="grid grid-cols-2 gap-3">
