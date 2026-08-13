@@ -181,11 +181,16 @@ export default function TeacherLessons() {
                 <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === currentLessons.length - 1} onClick={() => move(i, 1)}><ArrowDown className="w-3.5 h-3.5" /></Button>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{l.title}</div>
+                <div className="font-medium truncate flex items-center gap-2">
+                  {l.title}
+                  {!l.is_published && (
+                    <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Rascunho</span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">{l.type} · {l.duration_minutes} min</p>
               </div>
               <Button variant="ghost" size="icon" title="Exercícios" onClick={() => setExLesson(l)}><ListChecks className="w-4 h-4" /></Button>
-              <Link to={`/lesson/${l.id}`}><Button variant="ghost" size="icon" title="Pré-visualizar"><Eye className="w-4 h-4" /></Button></Link>
+              <Button variant="ghost" size="icon" title="Ver como aluno" onClick={() => openPreview(l)}><Eye className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => openEdit(l)}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => del(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </div>
@@ -198,6 +203,47 @@ export default function TeacherLessons() {
             {exLesson && <ExerciseEditor lessonId={exLesson.id} lessonTitle={exLesson.title} />}
           </DialogContent>
         </Dialog>
+
+        {/* Pré-visualização como aluno */}
+        <Dialog open={!!preview} onOpenChange={o => !o && setPreview(null)}>
+          <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Pré-visualização — visão do aluno</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground -mt-2 mb-2">
+              Conteúdo exatamente como o aluno verá. Nada é salvo nem contabilizado.
+            </p>
+            {previewLoading ? (
+              <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>
+            ) : preview ? (
+              <>
+                <StudentLessonPreview key={preview.id} lesson={preview} exercises={previewExercises} />
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-4 mt-6">
+                  <span className="text-sm text-muted-foreground">
+                    {preview.is_published ? "Publicada para os alunos" : "Rascunho — não visível aos alunos"}
+                  </span>
+                  <Button
+                    variant={preview.is_published ? "outline" : "default"}
+                    onClick={async () => {
+                      const next = !preview.is_published;
+                      const { error } = await supabase.from("lessons").update({ is_published: next }).eq("id", preview.id);
+                      if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+                      setPreview({ ...preview, is_published: next });
+                      toast({ title: next ? "Aula publicada" : "Aula despublicada" });
+                      load();
+                    }}
+                  >
+                    {preview.is_published ? "Despublicar" : "Publicar aula"}
+                  </Button>
+                </div>
+                <Link to={`/lesson/${preview.id}`} className="text-xs text-muted-foreground hover:text-foreground">
+                  Abrir a página real da aula
+                </Link>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
 
 
         <Dialog open={open} onOpenChange={setOpen}>
