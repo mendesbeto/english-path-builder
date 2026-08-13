@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Check } from "lucide-react";
+import { Loader2, Plus, Trash2, Check, Sparkles } from "lucide-react";
+import { EXERCISE_TEMPLATES } from "@/lib/lessonTemplates";
 
 interface Props { lessonId: string; lessonTitle: string; }
 
@@ -83,6 +84,27 @@ export default function ExerciseEditor({ lessonId, lessonTitle }: Props) {
 
       <div className="p-4 rounded-xl border border-dashed border-border space-y-3">
         <h4 className="font-display font-bold text-sm">Novo exercício</h4>
+        <div>
+          <Label className="flex items-center gap-1 mb-1"><Sparkles className="w-3.5 h-3.5" /> Templates</Label>
+          <div className="flex flex-wrap gap-2">
+            {EXERCISE_TEMPLATES.map(t => (
+              <Button
+                key={t.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setQuestion(t.question);
+                  setOptions([...t.options, "", "", "", ""].slice(0, 4));
+                  setCorrect(t.correctIndex);
+                  setPoints(t.points);
+                }}
+              >
+                {t.label}
+              </Button>
+            ))}
+          </div>
+        </div>
         <div><Label>Pergunta</Label><Textarea value={question} onChange={e => setQuestion(e.target.value)} /></div>
         <div className="space-y-2">
           <Label>Alternativas (clique no ✓ para marcar a correta)</Label>
