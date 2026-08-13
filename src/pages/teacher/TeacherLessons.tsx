@@ -247,9 +247,54 @@ export default function TeacherLessons() {
 
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogContent className={`${formPreview ? "max-w-3xl" : "max-w-lg"} max-h-[85vh] overflow-y-auto`}>
             <DialogHeader><DialogTitle>{editing ? "Editar" : "Nova"} aula</DialogTitle></DialogHeader>
+
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="publish"
+                  checked={form.is_published}
+                  onCheckedChange={v => setForm({ ...form, is_published: v })}
+                />
+                <Label htmlFor="publish" className="cursor-pointer">
+                  {form.is_published ? "Publicada" : "Rascunho"}
+                </Label>
+              </div>
+              <Button
+                type="button"
+                variant={formPreview ? "default" : "outline"}
+                size="sm"
+                onClick={async () => {
+                  const next = !formPreview;
+                  setFormPreview(next);
+                  if (next) {
+                    if (editing) {
+                      const { data } = await supabase.from("exercises").select("*").eq("lesson_id", editing.id).order("order_num");
+                      setPreviewExercises(data ?? []);
+                    } else {
+                      setPreviewExercises(template?.exercises ?? []);
+                    }
+                  }
+                }}
+              >
+                <Eye className="w-4 h-4 mr-1" /> {formPreview ? "Voltar à edição" : "Ver como aluno"}
+              </Button>
+            </div>
+
+            {formPreview ? (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Pré-visualização da aula {editing ? "com os dados salvos dos exercícios" : "com os exercícios do template"}. Nada é salvo aqui.
+                </p>
+                <StudentLessonPreview lesson={form} exercises={previewExercises} />
+                <Button onClick={save} className="w-full">
+                  {form.is_published ? "Salvar e publicar" : "Salvar como rascunho"}
+                </Button>
+              </div>
+            ) : (
             <div className="space-y-3">
+
               {!editing && (
                 <div className="p-3 rounded-xl border border-dashed border-border space-y-2">
                   <Label className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> Começar com um template</Label>
