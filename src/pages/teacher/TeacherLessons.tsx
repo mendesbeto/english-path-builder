@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Pencil, ListChecks, ArrowUp, ArrowDown, Eye, Sparkles } from "lucide-react";
 import { LESSON_TEMPLATES, type LessonTemplate } from "@/lib/lessonTemplates";
@@ -13,8 +14,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import ExerciseEditor from "@/components/ExerciseEditor";
+import StudentLessonPreview from "@/components/StudentLessonPreview";
 
 const TYPES = ["text","video","audio","quiz","speaking","writing","assessment"] as const;
+
 
 export default function TeacherLessons() {
   const { user } = useAuth();
@@ -27,9 +30,22 @@ export default function TeacherLessons() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [exLesson, setExLesson] = useState<any>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [previewExercises, setPreviewExercises] = useState<any[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [formPreview, setFormPreview] = useState(false);
   const [template, setTemplate] = useState<LessonTemplate | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
+  const [form, setForm] = useState({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10, is_published: true });
   const { toast } = useToast();
+
+  const openPreview = async (l: any) => {
+    setPreview(l);
+    setPreviewLoading(true);
+    const { data } = await supabase.from("exercises").select("*").eq("lesson_id", l.id).order("order_num");
+    setPreviewExercises(data ?? []);
+    setPreviewLoading(false);
+  };
+
 
   const load = async () => {
     const [{ data: lv }, { data: mods }, { data: less }] = await Promise.all([
@@ -54,21 +70,24 @@ export default function TeacherLessons() {
   const openNew = () => {
     setEditing(null);
     setTemplate(null);
-    setForm({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
+    setFormPreview(false);
+    setForm({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10, is_published: true });
     setOpen(true);
   };
 
   const applyTemplate = (t: LessonTemplate) => {
     setTemplate(t);
-    setForm({ ...t.form });
+    setForm({ ...t.form, is_published: true });
   };
 
   const openEdit = (l: any) => {
     setEditing(l);
     setTemplate(null);
-    setForm({ title: l.title, description: l.description ?? "", type: l.type, content: l.content ?? "", media_url: l.media_url ?? "", duration_minutes: l.duration_minutes ?? 10 });
+    setFormPreview(false);
+    setForm({ title: l.title, description: l.description ?? "", type: l.type, content: l.content ?? "", media_url: l.media_url ?? "", duration_minutes: l.duration_minutes ?? 10, is_published: l.is_published ?? true });
     setOpen(true);
   };
+
 
   const save = async () => {
     if (!selModule) return toast({ title: "Selecione um módulo", variant: "destructive" });
@@ -162,11 +181,16 @@ export default function TeacherLessons() {
                 <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === currentLessons.length - 1} onClick={() => move(i, 1)}><ArrowDown className="w-3.5 h-3.5" /></Button>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium truncate">{l.title}</div>
+                <div className="font-medium truncate flex items-center gap-2">
+                  {l.title}
+                  {!l.is_published && (
+                    <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Rascunho</span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">{l.type} · {l.duration_minutes} min</p>
               </div>
               <Button variant="ghost" size="icon" title="Exercícios" onClick={() => setExLesson(l)}><ListChecks className="w-4 h-4" /></Button>
-              <Link to={`/lesson/${l.id}`}><Button variant="ghost" size="icon" title="Pré-visualizar"><Eye className="w-4 h-4" /></Button></Link>
+              <Button variant="ghost" size="icon" title="Ver como aluno" onClick={() => openPreview(l)}><Eye className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => openEdit(l)}><Pencil className="w-4 h-4" /></Button>
               <Button variant="ghost" size="icon" onClick={() => del(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
             </div>
@@ -180,11 +204,97 @@ export default function TeacherLessons() {
           </DialogContent>
         </Dialog>
 
+        {/* Pré-visualização como aluno */}
+        <Dialog open={!!preview} onOpenChange={o => !o && setPreview(null)}>
+          <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Pré-visualização — visão do aluno</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground -mt-2 mb-2">
+              Conteúdo exatamente como o aluno verá. Nada é salvo nem contabilizado.
+            </p>
+            {previewLoading ? (
+              <div className="p-8 flex justify-center"><Loader2 className="animate-spin" /></div>
+            ) : preview ? (
+              <>
+                <StudentLessonPreview key={preview.id} lesson={preview} exercises={previewExercises} />
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-4 mt-6">
+                  <span className="text-sm text-muted-foreground">
+                    {preview.is_published ? "Publicada para os alunos" : "Rascunho — não visível aos alunos"}
+                  </span>
+                  <Button
+                    variant={preview.is_published ? "outline" : "default"}
+                    onClick={async () => {
+                      const next = !preview.is_published;
+                      const { error } = await supabase.from("lessons").update({ is_published: next }).eq("id", preview.id);
+                      if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+                      setPreview({ ...preview, is_published: next });
+                      toast({ title: next ? "Aula publicada" : "Aula despublicada" });
+                      load();
+                    }}
+                  >
+                    {preview.is_published ? "Despublicar" : "Publicar aula"}
+                  </Button>
+                </div>
+                <Link to={`/lesson/${preview.id}`} className="text-xs text-muted-foreground hover:text-foreground">
+                  Abrir a página real da aula
+                </Link>
+              </>
+            ) : null}
+          </DialogContent>
+        </Dialog>
+
+
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogContent className={`${formPreview ? "max-w-3xl" : "max-w-lg"} max-h-[85vh] overflow-y-auto`}>
             <DialogHeader><DialogTitle>{editing ? "Editar" : "Nova"} aula</DialogTitle></DialogHeader>
+
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-border">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="publish"
+                  checked={form.is_published}
+                  onCheckedChange={v => setForm({ ...form, is_published: v })}
+                />
+                <Label htmlFor="publish" className="cursor-pointer">
+                  {form.is_published ? "Publicada" : "Rascunho"}
+                </Label>
+              </div>
+              <Button
+                type="button"
+                variant={formPreview ? "default" : "outline"}
+                size="sm"
+                onClick={async () => {
+                  const next = !formPreview;
+                  setFormPreview(next);
+                  if (next) {
+                    if (editing) {
+                      const { data } = await supabase.from("exercises").select("*").eq("lesson_id", editing.id).order("order_num");
+                      setPreviewExercises(data ?? []);
+                    } else {
+                      setPreviewExercises(template?.exercises ?? []);
+                    }
+                  }
+                }}
+              >
+                <Eye className="w-4 h-4 mr-1" /> {formPreview ? "Voltar à edição" : "Ver como aluno"}
+              </Button>
+            </div>
+
+            {formPreview ? (
+              <div className="space-y-4">
+                <p className="text-xs text-muted-foreground">
+                  Pré-visualização da aula {editing ? "com os dados salvos dos exercícios" : "com os exercícios do template"}. Nada é salvo aqui.
+                </p>
+                <StudentLessonPreview lesson={form} exercises={previewExercises} />
+                <Button onClick={save} className="w-full">
+                  {form.is_published ? "Salvar e publicar" : "Salvar como rascunho"}
+                </Button>
+              </div>
+            ) : (
             <div className="space-y-3">
+
               {!editing && (
                 <div className="p-3 rounded-xl border border-dashed border-border space-y-2">
                   <Label className="flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> Começar com um template</Label>
@@ -227,7 +337,9 @@ export default function TeacherLessons() {
               <div><Label>Conteúdo (texto/enunciado)</Label><Textarea rows={5} value={form.content} onChange={e => setForm({...form, content: e.target.value})} /></div>
               <Button onClick={save} className="w-full">Salvar</Button>
             </div>
+            )}
           </DialogContent>
+
         </Dialog>
       </div>
     </AppLayout>
