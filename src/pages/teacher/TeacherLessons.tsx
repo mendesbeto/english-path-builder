@@ -30,9 +30,22 @@ export default function TeacherLessons() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [exLesson, setExLesson] = useState<any>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [previewExercises, setPreviewExercises] = useState<any[]>([]);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [formPreview, setFormPreview] = useState(false);
   const [template, setTemplate] = useState<LessonTemplate | null>(null);
-  const [form, setForm] = useState({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
+  const [form, setForm] = useState({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10, is_published: true });
   const { toast } = useToast();
+
+  const openPreview = async (l: any) => {
+    setPreview(l);
+    setPreviewLoading(true);
+    const { data } = await supabase.from("exercises").select("*").eq("lesson_id", l.id).order("order_num");
+    setPreviewExercises(data ?? []);
+    setPreviewLoading(false);
+  };
+
 
   const load = async () => {
     const [{ data: lv }, { data: mods }, { data: less }] = await Promise.all([
