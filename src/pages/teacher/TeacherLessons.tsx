@@ -70,21 +70,24 @@ export default function TeacherLessons() {
   const openNew = () => {
     setEditing(null);
     setTemplate(null);
-    setForm({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10 });
+    setFormPreview(false);
+    setForm({ title: "", description: "", type: "text", content: "", media_url: "", duration_minutes: 10, is_published: true });
     setOpen(true);
   };
 
   const applyTemplate = (t: LessonTemplate) => {
     setTemplate(t);
-    setForm({ ...t.form });
+    setForm({ ...t.form, is_published: true });
   };
 
   const openEdit = (l: any) => {
     setEditing(l);
     setTemplate(null);
-    setForm({ title: l.title, description: l.description ?? "", type: l.type, content: l.content ?? "", media_url: l.media_url ?? "", duration_minutes: l.duration_minutes ?? 10 });
+    setFormPreview(false);
+    setForm({ title: l.title, description: l.description ?? "", type: l.type, content: l.content ?? "", media_url: l.media_url ?? "", duration_minutes: l.duration_minutes ?? 10, is_published: l.is_published ?? true });
     setOpen(true);
   };
+
 
   const save = async () => {
     if (!selModule) return toast({ title: "Selecione um módulo", variant: "destructive" });
