@@ -337,7 +337,9 @@ export default function TeacherLessons() {
               <div><Label>Conteúdo (texto/enunciado)</Label><Textarea rows={5} value={form.content} onChange={e => setForm({...form, content: e.target.value})} /></div>
               <Button onClick={save} className="w-full">Salvar</Button>
             </div>
+            )}
           </DialogContent>
+
         </Dialog>
       </div>
     </AppLayout>
