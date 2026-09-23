@@ -195,6 +195,10 @@ BEGIN
     RAISE EXCEPTION 'não autenticado';
   END IF;
 
+  IF NOT public.has_role(v_student, 'student') THEN
+    RAISE EXCEPTION 'apenas alunos podem entrar em turmas';
+  END IF;
+
   SELECT * INTO v_class
   FROM public.classes
   WHERE upper(join_code) = upper(trim(_code))
