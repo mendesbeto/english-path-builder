@@ -31,7 +31,14 @@ export default function AdminUsers() {
       setLoading(false);
       return;
     }
-    const roleMap = new Map((roles ?? []).map(r => [r.user_id, r.role as Role]));
+    const roleMap = new Map<string, Role>();
+    (roles ?? []).forEach((r) => {
+      const current = roleMap.get(r.user_id) as Role | undefined;
+      const next = r.role as Role;
+      if (!current || next === "admin" || (next === "teacher" && current === "student")) {
+        roleMap.set(r.user_id, next);
+      }
+    });
     setRows((profiles ?? []).map(p => ({ ...p, role: roleMap.get(p.id) ?? "student" })) as Row[]);
     setLoading(false);
   };
