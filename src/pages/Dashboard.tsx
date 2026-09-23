@@ -31,7 +31,7 @@ export default function Dashboard() {
       const [{ data: lv }, { data: lessons }, { data: prog }] = await Promise.all([
         supabase.from("levels").select("*").order("order_num"),
         supabase.from("lessons").select("id"),
-        supabase.from("lesson_progress").select("lesson_id").eq("completed", true),
+        supabase.from("lesson_progress").select("lesson_id").eq("student_id", profile?.id ?? "").eq("completed", true),
       ]);
       if (!mounted) return;
       setLevels(lv ?? []);
