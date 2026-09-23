@@ -30,15 +30,15 @@ export default function Topbar() {
   const title = getTitle(pathname);
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-border/70 bg-background/90 px-3 backdrop-blur md:px-6">
+    <header className="sticky top-0 z-40 flex min-h-16 shrink-0 items-center justify-between border-b border-border/70 bg-background/90 px-2 py-2 backdrop-blur sm:px-3 md:px-6">
       <div className="flex min-w-0 items-center gap-2">
         <SidebarTrigger className="h-9 w-9" aria-label="Abrir menu" />
-        <div className="hidden items-center gap-2 text-sm text-muted-foreground sm:flex">
+        <div className="hidden min-w-0 items-center gap-2 text-sm text-muted-foreground sm:flex">
           <span>Inglês Hope</span>
           <ChevronRight className="h-4 w-4" />
           <span className="font-semibold text-foreground">{title}</span>
         </div>
-        <h1 className="truncate font-display text-base font-bold sm:hidden">{title}</h1>
+        <h1 className="max-w-[calc(100vw-7rem)] truncate font-display text-base font-bold sm:hidden">{title}</h1>
       </div>
 
       <div className="flex items-center gap-1">
