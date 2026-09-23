@@ -49,7 +49,12 @@ export default function TeacherLessons() {
     setPreview(l);
     setPreviewLoading(true);
     const { data } = await supabase.from("exercises").select("*").eq("lesson_id", l.id).order("order_num");
-    setPreviewExercises(data ?? []);
+    const ids = (data ?? []).map((ex: any) => ex.id);
+    const { data: answers } = ids.length
+      ? await supabase.from("exercise_answers").select("exercise_id,correct_answer").in("exercise_id", ids)
+      : { data: [] as any[] };
+    const answerMap = new Map((answers ?? []).map((a: any) => [a.exercise_id, a.correct_answer]));
+    setPreviewExercises((data ?? []).map((ex: any) => ({ ...ex, correct_answer: answerMap.get(ex.id) })));
     setPreviewLoading(false);
   };
 
@@ -119,9 +124,19 @@ export default function TeacherLessons() {
         .single();
       if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
       if (template?.exercises?.length && data?.id) {
-        await supabase.from("exercises").insert(
-          template.exercises.map((ex, i) => ({ ...ex, lesson_id: data.id, order_num: i })),
-        );
+        for (const [i, ex] of template.exercises.entries()) {
+          const result = await supabase.rpc("create_exercise", {
+            p_lesson_id: data.id,
+            p_question: ex.question,
+            p_options: ex.options,
+            p_correct_answer: ex.correct_answer,
+            p_points: ex.points,
+            p_order_num: i,
+          });
+          if (result.error) {
+            return toast({ title: "Aula criada, mas houve erro nos exercícios", description: result.error.message, variant: "destructive" });
+          }
+        }
       }
       toast({
         title: "Aula criada",
