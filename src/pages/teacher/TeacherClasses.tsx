@@ -193,207 +193,55 @@ export default function TeacherClasses() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-display font-bold">Turmas</h1>
-            <p className="text-muted-foreground text-sm">Crie turmas e matricule seus alunos.</p>
+      <div className="mx-auto w-full max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+        <section className="relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 via-background to-accent/10 p-6 sm:p-8">
+          <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/70 px-3 py-1.5 text-xs font-semibold text-primary"><Users className="h-3.5 w-3.5" /> Gestão de turmas</div>
+              <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Turmas</h1>
+              <p className="mt-2 max-w-2xl text-muted-foreground">Crie turmas, organize alunos e compartilhe códigos de convite de forma simples.</p>
+            </div>
+            <Button onClick={openNew} size="lg"><Plus className="mr-2 h-4 w-4" /> Nova turma</Button>
           </div>
-          <Button onClick={openNew}>
-            <Plus className="h-4 w-4 mr-2" /> Nova turma
-          </Button>
-        </div>
+        </section>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-3">
-            {classes.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhuma turma criada ainda.</p>
-            )}
-            {classes.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedId(c.id)}
-                className={`w-full text-left rounded-xl border p-4 transition-colors ${
-                  selectedId === c.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {c.level_code ?? "—"} · {countFor(c.id)} aluno(s)
-                    </p>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(c); }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); removeClass(c); }}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-                {c.description && (
-                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{c.description}</p>
-                )}
-              </button>
-            ))}
-          </div>
+        <section className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><Users className="mb-3 h-5 w-5 text-primary"/><p className="text-2xl font-bold">{classes.length}</p><p className="text-sm text-muted-foreground">Turmas criadas</p></div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><UserPlus className="mb-3 h-5 w-5 text-accent"/><p className="text-2xl font-bold">{enrollments.length}</p><p className="text-sm text-muted-foreground">Matrículas</p></div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><Ticket className="mb-3 h-5 w-5 text-secondary"/><p className="text-2xl font-bold">{classes.filter(c=>codeStatus(c).valid).length}</p><p className="text-sm text-muted-foreground">Convites ativos</p></div>
+        </section>
 
-          <div className="lg:col-span-2 rounded-xl border border-border p-5">
-            {!selected ? (
-              <p className="text-sm text-muted-foreground">Selecione ou crie uma turma para gerenciar alunos.</p>
-            ) : (
-              <>
-                <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" />
-                    <h2 className="font-semibold">{selected.name}</h2>
-                    <span className="text-xs text-muted-foreground">({enrolled.length} matriculados)</span>
-                  </div>
-                  <Button size="sm" onClick={() => { setSearch(""); setEnrollOpen(true); }}>
-                    <UserPlus className="h-4 w-4 mr-2" /> Adicionar aluno
-                  </Button>
-                </div>
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <section className="rounded-2xl border bg-card p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between"><div><h2 className="font-display font-semibold">Minhas turmas</h2><p className="text-xs text-muted-foreground">{classes.length} turma(s)</p></div><Button size="icon" variant="ghost" onClick={openNew}><Plus className="h-4 w-4"/></Button></div>
+            <div className="space-y-2">
+              {classes.map(c=><button key={c.id} onClick={()=>setSelectedId(c.id)} className={`w-full rounded-xl border p-4 text-left transition-colors ${selectedId===c.id?"border-primary bg-primary/5":"hover:bg-muted/50"}`}>
+                <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate font-semibold">{c.name}</p><p className="mt-1 text-xs text-muted-foreground">{c.level_code??"—"} · {countFor(c.id)} aluno(s)</p></div><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c.is_active?"bg-primary/10 text-primary":"bg-muted text-muted-foreground"}`}>{c.is_active?"Ativa":"Inativa"}</span></div>
+                {c.description&&<p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{c.description}</p>}
+                <div className="mt-3 flex gap-1"><Button size="icon" variant="ghost" className="h-7 w-7" onClick={e=>{e.stopPropagation();openEdit(c)}}><Pencil className="h-3.5 w-3.5"/></Button><Button size="icon" variant="ghost" className="h-7 w-7" onClick={e=>{e.stopPropagation();removeClass(c)}}><Trash2 className="h-3.5 w-3.5 text-destructive"/></Button></div>
+              </button>)}
+              {!classes.length&&<div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">Nenhuma turma criada ainda.</div>}
+            </div>
+          </section>
 
-                <div className="rounded-lg border border-border bg-muted/40 p-4 mb-4 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-3">
-                    <Ticket className="h-4 w-4 text-primary" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Código de convite</p>
-                      <p className="font-mono text-lg font-bold tracking-widest">{selected.join_code}</p>
-                      <p className="text-xs mt-1 text-muted-foreground">
-                        {selected.join_code_expires_at
-                          ? `Expira em ${new Date(selected.join_code_expires_at).toLocaleString("pt-BR")}`
-                          : "Sem expiração"}
-                        {" · "}
-                        {selected.join_code_max_uses != null
-                          ? `${selected.join_code_uses}/${selected.join_code_max_uses} usos`
-                          : `${selected.join_code_uses} usos (ilimitado)`}
-                      </p>
-                      {(() => {
-                        const { expired, exhausted } = codeStatus(selected);
-                        return (expired || exhausted) ? (
-                          <p className="text-xs mt-1 text-destructive font-medium">
-                            {expired ? "Código expirado — gere um novo." : "Limite de usos atingido — gere um novo."}
-                          </p>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => copyInvite(selected)}>
-                      <Copy className="h-4 w-4 mr-2" /> Copiar convite
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => { setCodeForm({ validDays: "", maxUses: "" }); setCodeOpen(true); }}>
-                      <RefreshCw className="h-4 w-4 mr-2" /> Novo código
-                    </Button>
-                  </div>
-                </div>
-
-
-
-                {enrolled.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhum aluno matriculado nesta turma.</p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {enrolled.map((s) => (
-                      <div key={s.id} className="flex items-center justify-between py-3">
-                        <div>
-                          <p className="text-sm font-medium">{s.full_name ?? "Aluno"}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Nível {s.current_level ?? "—"} · {s.points ?? 0} pts
-                          </p>
-                        </div>
-                        <Button size="sm" variant="ghost" onClick={() => removeStudent(s.id)}>
-                          <X className="h-4 w-4 mr-1" /> Remover
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          <section className="rounded-2xl border bg-card shadow-sm">
+            {!selected ? <div className="flex min-h-[360px] items-center justify-center p-8 text-center"><div><Users className="mx-auto h-9 w-9 text-muted-foreground"/><h2 className="mt-3 font-semibold">Selecione uma turma</h2><p className="mt-1 text-sm text-muted-foreground">Escolha uma turma à esquerda ou crie uma nova.</p></div></div> : <>
+              <div className="border-b p-5 sm:p-6"><div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"><div><div className="flex items-center gap-2"><h2 className="font-display text-xl font-semibold">{selected.name}</h2><span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">{selected.level_code}</span></div><p className="mt-1 text-sm text-muted-foreground">{selected.description||"Sem descrição."}</p></div><Button onClick={()=>{setSearch("");setEnrollOpen(true)}}><UserPlus className="mr-2 h-4 w-4"/> Adicionar aluno</Button></div></div>
+              <div className="border-b p-5 sm:p-6"><div className="flex flex-col gap-4 rounded-2xl border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><Ticket className="h-5 w-5"/></div><div><p className="text-xs font-medium text-muted-foreground">Código de convite</p><p className="font-mono text-xl font-bold tracking-[0.25em]">{selected.join_code}</p><p className="mt-1 text-xs text-muted-foreground">{selected.join_code_expires_at?`Expira em ${new Date(selected.join_code_expires_at).toLocaleString("pt-PT")}`:"Sem expiração"} · {selected.join_code_max_uses!=null?`${selected.join_code_uses}/${selected.join_code_max_uses} usos`:`${selected.join_code_uses} usos (ilimitado)`}</p></div></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={()=>copyInvite(selected)}><Copy className="mr-2 h-4 w-4"/> Copiar convite</Button><Button size="sm" variant="ghost" onClick={()=>{setCodeForm({validDays:"",maxUses:""});setCodeOpen(true)}}><RefreshCw className="mr-2 h-4 w-4"/> Novo código</Button></div></div></div>
+              <div className="p-5 sm:p-6"><div className="mb-4 flex items-center justify-between"><div><h3 className="font-display font-semibold">Alunos matriculados</h3><p className="text-xs text-muted-foreground">{enrolled.length} aluno(s)</p></div></div>
+                {enrolled.length===0?<div className="rounded-xl border border-dashed p-8 text-center"><UserPlus className="mx-auto h-7 w-7 text-muted-foreground"/><p className="mt-2 text-sm font-medium">Nenhum aluno matriculado</p><p className="mt-1 text-xs text-muted-foreground">Adicione alunos manualmente ou compartilhe o código de convite.</p></div>:<div className="divide-y">{enrolled.map(s=><div key={s.id} className="flex items-center justify-between gap-3 py-4"><div className="min-w-0"><p className="truncate text-sm font-medium">{s.full_name??"Aluno"}</p><p className="text-xs text-muted-foreground">Nível {s.current_level??"—"} · {s.points??0} pts</p></div><Button size="sm" variant="ghost" onClick={()=>removeStudent(s.id)}><X className="mr-1 h-4 w-4"/> Remover</Button></div>)}</div>}
+              </div>
+            </>}
+          </section>
         </div>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar turma" : "Nova turma"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nome</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Turma Manhã A1" />
-            </div>
-            <div className="space-y-2">
-              <Label>Nível</Label>
-              <Select value={form.level_code} onValueChange={(v) => setForm({ ...form, level_code: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {LEVELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Descrição</Label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </div>
-            <Button className="w-full" onClick={save}>{editing ? "Salvar" : "Criar turma"}</Button>
-          </div>
-        </DialogContent>
+        <DialogContent><DialogHeader><DialogTitle>{editing?"Editar turma":"Nova turma"}</DialogTitle></DialogHeader><div className="space-y-4"><div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Turma Manhã A1"/></div><div className="space-y-2"><Label>Nível</Label><Select value={form.level_code} onValueChange={v=>setForm({...form,level_code:v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{LEVELS.map(l=><SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={e=>setForm({...form,description:e.target.value})}/></div><Button className="w-full" onClick={save}>{editing?"Salvar":"Criar turma"}</Button></div></DialogContent>
       </Dialog>
-
-      <Dialog open={enrollOpen} onOpenChange={setEnrollOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adicionar alunos</DialogTitle>
-          </DialogHeader>
-          <Input placeholder="Buscar aluno..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          <div className="max-h-72 overflow-y-auto divide-y divide-border">
-            {available.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4">Nenhum aluno disponível.</p>
-            )}
-            {available.map((s) => (
-              <div key={s.id} className="flex items-center justify-between py-3">
-                <div>
-                  <p className="text-sm font-medium">{s.full_name ?? "Aluno"}</p>
-                  <p className="text-xs text-muted-foreground">Nível {s.current_level ?? "—"}</p>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => addStudent(s.id)}>
-                  <Plus className="h-4 w-4 mr-1" /> Adicionar
-                </Button>
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={codeOpen} onOpenChange={setCodeOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Gerar novo código de convite</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            O código anterior deixará de funcionar imediatamente. Deixe os campos em branco para um código sem expiração e sem limite de usos.
-          </p>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Validade (dias)</Label>
-              <Input type="number" min={1} value={codeForm.validDays} placeholder="Ex: 7"
-                onChange={(e) => setCodeForm({ ...codeForm, validDays: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Limite de usos</Label>
-              <Input type="number" min={1} value={codeForm.maxUses} placeholder="Ex: 30"
-                onChange={(e) => setCodeForm({ ...codeForm, maxUses: e.target.value })} />
-            </div>
-            <Button className="w-full" onClick={regenerate}>Gerar código</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Dialog open={enrollOpen} onOpenChange={setEnrollOpen}><DialogContent><DialogHeader><DialogTitle>Adicionar alunos</DialogTitle></DialogHeader><Input placeholder="Buscar aluno..." value={search} onChange={e=>setSearch(e.target.value)}/><div className="max-h-72 overflow-y-auto divide-y">{available.length===0&&<p className="py-4 text-sm text-muted-foreground">Nenhum aluno disponível.</p>}{available.map(s=><div key={s.id} className="flex items-center justify-between py-3"><div><p className="text-sm font-medium">{s.full_name??"Aluno"}</p><p className="text-xs text-muted-foreground">Nível {s.current_level??"—"}</p></div><Button size="sm" variant="outline" onClick={()=>addStudent(s.id)}><Plus className="mr-1 h-4 w-4"/> Adicionar</Button></div>)}</div></DialogContent></Dialog>
+      <Dialog open={codeOpen} onOpenChange={setCodeOpen}><DialogContent><DialogHeader><DialogTitle>Gerar novo código de convite</DialogTitle></DialogHeader><p className="text-sm text-muted-foreground">O código anterior deixará de funcionar. Deixe em branco para não definir expiração ou limite.</p><div className="space-y-4"><div className="space-y-2"><Label>Validade (dias)</Label><Input type="number" min={1} value={codeForm.validDays} placeholder="Ex: 7" onChange={e=>setCodeForm({...codeForm,validDays:e.target.value})}/></div><div className="space-y-2"><Label>Limite de usos</Label><Input type="number" min={1} value={codeForm.maxUses} placeholder="Ex: 30" onChange={e=>setCodeForm({...codeForm,maxUses:e.target.value})}/></div><Button className="w-full" onClick={regenerate}>Gerar código</Button></div></DialogContent></Dialog>
 
     </AppLayout>
   );
