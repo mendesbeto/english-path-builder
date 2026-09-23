@@ -79,7 +79,7 @@ export default function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-3">
+      <SidebarContent className="scrollbar-thin px-2 py-3">
         <SidebarGroup>
           <SidebarGroupLabel>Aprender</SidebarGroupLabel>
           <SidebarGroupContent>{renderItems(studentItems)}</SidebarGroupContent>
@@ -100,7 +100,7 @@ export default function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-2">
+      <SidebarFooter className="safe-area-bottom border-t border-sidebar-border p-2">
         <div className="mb-1 flex items-center gap-2 rounded-xl bg-sidebar-accent/60 p-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
             {(profile?.full_name?.trim()?.[0] ?? "U").toUpperCase()}
