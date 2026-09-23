@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function ProtectedRoute({ children, allow }: Props) {
-  const { user, role, loading } = useAuth();
+  const { user, role, profile, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,6 +22,12 @@ export function ProtectedRoute({ children, allow }: Props) {
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
   if (allow && (!role || !allow.includes(role))) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Teacher accounts must be explicitly approved by an administrator
+  // before accessing protected teacher/admin surfaces.
+  if (role === "teacher" && profile && !profile.is_approved && allow?.includes("teacher")) {
     return <Navigate to="/dashboard" replace />;
   }
 
