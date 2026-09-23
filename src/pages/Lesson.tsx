@@ -337,7 +337,7 @@ export default function Lesson() {
                             <div className="grid gap-2">
                               {opts.map((opt) => {
                                 const isChosen = chosen === opt;
-                                const isCorrect = submitted && quizResult?.correct_answers?.[ex.id] === opt;
+                                const isCorrect = submitted && quizResult?.results?.[ex.id] && answers[ex.id] === opt;
                                 const state = submitted
                                   ? isCorrect
                                     ? "border-success bg-success/10"
