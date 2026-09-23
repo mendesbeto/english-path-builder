@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,7 @@ export default function Lesson() {
   const [exercises, setExercises] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [quizResult, setQuizResult] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);
   const [writing, setWriting] = useState("");
   const [saving, setSaving] = useState(false);
@@ -55,6 +56,7 @@ export default function Lesson() {
     const load = async () => {
       setLoading(true);
       setSubmitted(false);
+      setQuizResult(null);
       setAnswers({});
       setWriting("");
       if (!lessonId) return;
@@ -66,7 +68,7 @@ export default function Lesson() {
       if (l) {
         const [{ data: m }, { data: ex }, { data: sib }] = await Promise.all([
           supabase.from("modules").select("*").eq("id", l.module_id).maybeSingle(),
-          supabase.from("exercises").select("*").eq("lesson_id", l.id).order("order_num"),
+          supabase.from("exercises").select("id,lesson_id,question,options,points,order_num").eq("lesson_id", l.id).order("order_num"),
           supabase.from("lessons").select("id,title,type,order_num").eq("module_id", l.module_id).order("order_num"),
         ]);
 
@@ -104,44 +106,44 @@ export default function Lesson() {
   const prev = idx > 0 ? siblings[idx - 1] : null;
   const next = idx >= 0 && idx < siblings.length - 1 ? siblings[idx + 1] : null;
 
-  const result = useMemo(() => {
-    if (!exercises.length) return null;
-    const correct = exercises.filter((e) => answers[e.id] === e.correct_answer);
-    const points = correct.reduce((sum, e) => sum + (e.points ?? 0), 0);
-    const maxPoints = exercises.reduce((sum, e) => sum + (e.points ?? 0), 0);
-    return { correct: correct.length, total: exercises.length, points, maxPoints };
-  }, [exercises, answers]);
-
-  const saveProgress = async (score: number) => {
-    if (!user || !lessonId) return;
+  const saveProgress = async (answersToSubmit: Record<string, string> = {}) => {
+    if (!user || !lessonId) return false;
     setSaving(true);
 
-    const { error } = await supabase.from("lesson_progress").upsert({
-      student_id: user.id,
-      lesson_id: lessonId,
-      completed: true,
-      score,
-      completed_at: new Date().toISOString(),
-    }, { onConflict: "student_id,lesson_id" });
+    const { data, error } = await supabase.rpc("submit_lesson_attempt", {
+      p_lesson_id: lessonId,
+      p_answers: answersToSubmit,
+    });
 
     setSaving(false);
 
     if (error) {
       toast({ title: "Não foi possível salvar", description: error.message, variant: "destructive" });
-      return;
+      return false;
     }
 
-    setProgress((current: any) => ({ ...(current ?? {}), completed: true, score }));
+    if (data) {
+      setQuizResult(data);
+      setProgress((current: any) => ({
+        ...(current ?? {}),
+        completed: true,
+        score: data.score ?? 0,
+        completed_at: new Date().toISOString(),
+      }));
+    }
+
     toast({
       title: "Aula concluída!",
-      description: score ? `Pontuação registrada: ${score}` : "Seu progresso foi atualizado.",
+      description: data?.score ? `Pontuação registrada: ${data.score}` : "Seu progresso foi atualizado.",
     });
+    return true;
   };
 
   const submitQuiz = async () => {
-    setSubmitted(true);
-    if (result) await saveProgress(result.points);
+    const saved = await saveProgress(answers);
+    if (saved) setSubmitted(true);
   };
+
 
   if (loading) {
     return (
@@ -335,7 +337,7 @@ export default function Lesson() {
                             <div className="grid gap-2">
                               {opts.map((opt) => {
                                 const isChosen = chosen === opt;
-                                const isCorrect = ex.correct_answer === opt;
+                                const isCorrect = submitted && quizResult?.correct_answers?.[ex.id] === opt;
                                 const state = submitted
                                   ? isCorrect
                                     ? "border-success bg-success/10"
@@ -385,7 +387,7 @@ export default function Lesson() {
                       Enviar respostas
                     </Button>
                   ) : (
-                    result && (
+                    quizResult && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -394,9 +396,9 @@ export default function Lesson() {
                         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                           <Award className="h-7 w-7" />
                         </div>
-                        <p className="mt-3 font-display text-3xl font-bold text-primary">{result.correct}/{result.total}</p>
-                        <p className="text-sm text-muted-foreground">{result.points} de {result.maxPoints} pontos</p>
-                        <Button variant="outline" className="mt-4" onClick={() => { setSubmitted(false); setAnswers({}); }}>
+                        <p className="mt-3 font-display text-3xl font-bold text-primary">{quizResult.correct}/{quizResult.total}</p>
+                        <p className="text-sm text-muted-foreground">{quizResult.score} de {quizResult.max_points} pontos</p>
+                        <Button variant="outline" className="mt-4" onClick={() => { setSubmitted(false); setQuizResult(null); setAnswers({}); }}>
                           Refazer exercício
                         </Button>
                       </motion.div>
@@ -419,7 +421,7 @@ export default function Lesson() {
                     <Button
                       variant="secondary"
                       disabled={saving}
-                      onClick={() => saveProgress(progress?.score ?? 0)}
+                      onClick={() => saveProgress()}
                     >
                       {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
                       Marcar como concluída
