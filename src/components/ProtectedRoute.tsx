@@ -21,7 +21,7 @@ export function ProtectedRoute({ children, allow }: Props) {
 
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
 
-  if (allow && role && !allow.includes(role)) {
+  if (allow && (!role || !allow.includes(role))) {
     return <Navigate to="/dashboard" replace />;
   }
 
