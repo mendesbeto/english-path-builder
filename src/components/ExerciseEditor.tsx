@@ -21,8 +21,15 @@ export default function ExerciseEditor({ lessonId, lessonTitle }: Props) {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase.from("exercises").select("*").eq("lesson_id", lessonId).order("order_num");
-    setItems(data ?? []);
+    const [{ data: exercises }, { data: answers }] = await Promise.all([
+      supabase.from("exercises").select("*").eq("lesson_id", lessonId).order("order_num"),
+      supabase.from("exercise_answers").select("exercise_id,correct_answer").in(
+        "exercise_id",
+        ((await supabase.from("exercises").select("id").eq("lesson_id", lessonId)).data ?? []).map((e: any) => e.id),
+      ),
+    ]);
+    const answerMap = new Map((answers ?? []).map((a: any) => [a.exercise_id, a.correct_answer]));
+    setItems((exercises ?? []).map((ex: any) => ({ ...ex, correct_answer: answerMap.get(ex.id) })));
     setLoading(false);
   };
 
@@ -36,9 +43,13 @@ export default function ExerciseEditor({ lessonId, lessonTitle }: Props) {
     const answer = options[correct]?.trim();
     if (!answer) return toast({ title: "Selecione a alternativa correta", variant: "destructive" });
     setSaving(true);
-    const { error } = await supabase.from("exercises").insert({
-      lesson_id: lessonId, question: question.trim(), options: opts,
-      correct_answer: answer, points, order_num: items.length,
+    const { error } = await supabase.rpc("create_exercise", {
+      p_lesson_id: lessonId,
+      p_question: question.trim(),
+      p_options: opts,
+      p_correct_answer: answer,
+      p_points: points,
+      p_order_num: items.length,
     });
     setSaving(false);
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
