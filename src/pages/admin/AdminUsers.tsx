@@ -46,10 +46,11 @@ export default function AdminUsers() {
   useEffect(() => { load(); }, []);
 
   const setRole = async (userId: string, newRole: Role) => {
-    const { error: deleteError } = await supabase.from("user_roles").delete().eq("user_id", userId);
-    if (deleteError) return toast({ title: "Erro", description: deleteError.message, variant: "destructive" });
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: newRole });
-    if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+    const { error } = await supabase.rpc("set_user_role", {
+      target_user_id: userId,
+      new_role: newRole,
+    });
+    if (error) return toast({ title: "Erro ao atualizar papel", description: error.message, variant: "destructive" });
     toast({ title: "Papel atualizado" });
     load();
   };
@@ -72,7 +73,7 @@ export default function AdminUsers() {
     total: rows.length,
     students: rows.filter(r => r.role === "student").length,
     teachers: rows.filter(r => r.role === "teacher").length,
-    pending: rows.filter(r => !r.is_approved).length,
+    pending: rows.filter(r => r.role === "teacher" && !r.is_approved).length,
   }), [rows]);
 
   const roleLabel: Record<Role, string> = { student: "Aluno", teacher: "Professor", admin: "Admin" };
