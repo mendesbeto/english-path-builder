@@ -21,13 +21,11 @@ export default function ExerciseEditor({ lessonId, lessonTitle }: Props) {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [{ data: exercises }, { data: answers }] = await Promise.all([
-      supabase.from("exercises").select("*").eq("lesson_id", lessonId).order("order_num"),
-      supabase.from("exercise_answers").select("exercise_id,correct_answer").in(
-        "exercise_id",
-        ((await supabase.from("exercises").select("id").eq("lesson_id", lessonId)).data ?? []).map((e: any) => e.id),
-      ),
-    ]);
+    const { data: exercises } = await supabase.from("exercises").select("*").eq("lesson_id", lessonId).order("order_num");
+    const ids = (exercises ?? []).map((ex: any) => ex.id);
+    const { data: answers } = ids.length
+      ? await supabase.from("exercise_answers").select("exercise_id,correct_answer").in("exercise_id", ids)
+      : { data: [] as any[] };
     const answerMap = new Map((answers ?? []).map((a: any) => [a.exercise_id, a.correct_answer]));
     setItems((exercises ?? []).map((ex: any) => ({ ...ex, correct_answer: answerMap.get(ex.id) })));
     setLoading(false);
