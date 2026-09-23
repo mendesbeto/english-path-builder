@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -7,16 +7,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Pencil, ListChecks, ArrowUp, ArrowDown, Eye, Sparkles } from "lucide-react";
+import { Loader2, Plus, Trash2, Pencil, ListChecks, ArrowUp, ArrowDown, Eye, Sparkles, BookOpen, CheckCircle2, FilePenLine, Search, Filter, Clock3, Video, Volume2, Mic2, PenLine, ClipboardCheck } from "lucide-react";
 import { LESSON_TEMPLATES, type LessonTemplate } from "@/lib/lessonTemplates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import ExerciseEditor from "@/components/ExerciseEditor";
 import StudentLessonPreview from "@/components/StudentLessonPreview";
 
 const TYPES = ["text","video","audio","quiz","speaking","writing","assessment"] as const;
+const typeMeta: Record<string, { label: string; icon: typeof BookOpen }> = {
+  text: { label: "Texto", icon: BookOpen }, video: { label: "Vídeo", icon: Video }, audio: { label: "Áudio", icon: Volume2 },
+  quiz: { label: "Quiz", icon: ClipboardCheck }, speaking: { label: "Speaking", icon: Mic2 }, writing: { label: "Writing", icon: PenLine }, assessment: { label: "Avaliação", icon: CheckCircle2 },
+};
 
 
 export default function TeacherLessons() {
@@ -26,6 +30,9 @@ export default function TeacherLessons() {
   const [lessons, setLessons] = useState<any[]>([]);
   const [selLevel, setSelLevel] = useState<string>("");
   const [selModule, setSelModule] = useState<string>("");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [publicationFilter, setPublicationFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -65,7 +72,15 @@ export default function TeacherLessons() {
     if (currentModules.length && !currentModules.find(m => m.id === selModule)) setSelModule(currentModules[0].id);
   }, [selLevel, modules]);
 
-  const currentLessons = lessons.filter(l => l.module_id === selModule);
+  const currentLessons = useMemo(() => lessons.filter(l => l.module_id === selModule), [lessons, selModule]);
+  const filteredLessons = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return currentLessons.filter(l => (!q || String(l.title ?? "").toLowerCase().includes(q)) && (typeFilter === "all" || l.type === typeFilter) && (publicationFilter === "all" || (publicationFilter === "published" ? l.is_published : !l.is_published)));
+  }, [currentLessons, search, typeFilter, publicationFilter]);
+  const publishedCount = currentLessons.filter(l => l.is_published).length;
+  const draftCount = currentLessons.length - publishedCount;
+  const totalDuration = currentLessons.reduce((sum, l) => sum + Number(l.duration_minutes ?? 0), 0);
+  const resetFilters = () => { setSearch(""); setTypeFilter("all"); setPublicationFilter("all"); };
 
   const openNew = () => {
     setEditing(null);
@@ -141,61 +156,46 @@ export default function TeacherLessons() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto p-6 max-w-6xl">
-        <h1 className="text-3xl font-display font-bold mb-2">Aulas & Conteúdo</h1>
-        <p className="text-muted-foreground mb-6">Crie e edite aulas por módulo.</p>
-
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <Label>Nível</Label>
-            <Select value={selLevel} onValueChange={setSelLevel}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {levels.map(lv => <SelectItem key={lv.id} value={lv.id}>{lv.code} — {lv.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
+      <div className="mx-auto w-full max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+        <section className="relative overflow-hidden rounded-3xl border border-primary/10 bg-gradient-to-br from-primary/10 via-background to-accent/10 p-6 sm:p-8">
+          <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div><div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/70 px-3 py-1.5 text-xs font-semibold text-primary"><Sparkles className="h-3.5 w-3.5" /> Biblioteca de aprendizagem</div><h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Aulas & Conteúdo</h1><p className="mt-2 max-w-2xl text-muted-foreground">Organize aulas por nível e módulo, prepare exercícios e publique experiências prontas para os alunos.</p></div>
+            <Button onClick={openNew} disabled={!selModule} size="lg"><Plus className="mr-2 h-4 w-4" /> Nova aula</Button>
           </div>
-          <div>
-            <Label>Módulo</Label>
-            <Select value={selModule} onValueChange={setSelModule}>
-              <SelectTrigger><SelectValue placeholder="Selecione um módulo" /></SelectTrigger>
-              <SelectContent>
-                {currentModules.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
-              </SelectContent>
-            </Select>
+        </section>
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><BookOpen className="mb-3 h-5 w-5 text-primary" /><p className="text-2xl font-bold">{currentLessons.length}</p><p className="text-sm text-muted-foreground">Aulas no módulo</p></div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><CheckCircle2 className="mb-3 h-5 w-5 text-primary" /><p className="text-2xl font-bold">{publishedCount}</p><p className="text-sm text-muted-foreground">Publicadas</p></div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><FilePenLine className="mb-3 h-5 w-5 text-secondary" /><p className="text-2xl font-bold">{draftCount}</p><p className="text-sm text-muted-foreground">Rascunhos</p></div>
+          <div className="rounded-2xl border bg-card p-5 shadow-sm"><Clock3 className="mb-3 h-5 w-5 text-accent" /><p className="text-2xl font-bold">{totalDuration} min</p><p className="text-sm text-muted-foreground">Carga estimada</p></div>
+        </section>
+        <section className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Nível</Label><Select value={selLevel} onValueChange={setSelLevel}><SelectTrigger className="mt-2 h-11 rounded-xl"><SelectValue /></SelectTrigger><SelectContent>{levels.map(lv=><SelectItem key={lv.id} value={lv.id}>{lv.code} — {lv.title}</SelectItem>)}</SelectContent></Select></div>
+            <div><Label>Módulo</Label><Select value={selModule} onValueChange={setSelModule} disabled={!currentModules.length}><SelectTrigger className="mt-2 h-11 rounded-xl"><SelectValue placeholder="Selecione um módulo" /></SelectTrigger><SelectContent>{currentModules.map(m=><SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}</SelectContent></Select></div>
           </div>
-        </div>
-
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-display font-bold">Aulas</h2>
-          <Button onClick={openNew} disabled={!selModule}><Plus className="w-4 h-4 mr-1" /> Nova aula</Button>
-        </div>
-
-        {!selModule && <p className="text-sm text-muted-foreground">Crie um módulo primeiro (Admin → Níveis & Módulos).</p>}
-
-        <div className="space-y-2">
-          {currentLessons.map((l, i) => (
-            <div key={l.id} className="p-4 rounded-xl border border-border bg-card flex items-center gap-2">
-              <div className="flex flex-col">
-                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp className="w-3.5 h-3.5" /></Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6" disabled={i === currentLessons.length - 1} onClick={() => move(i, 1)}><ArrowDown className="w-3.5 h-3.5" /></Button>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium truncate flex items-center gap-2">
-                  {l.title}
-                  {!l.is_published && (
-                    <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">Rascunho</span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">{l.type} · {l.duration_minutes} min</p>
-              </div>
-              <Button variant="ghost" size="icon" title="Exercícios" onClick={() => setExLesson(l)}><ListChecks className="w-4 h-4" /></Button>
-              <Button variant="ghost" size="icon" title="Ver como aluno" onClick={() => openPreview(l)}><Eye className="w-4 h-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => openEdit(l)}><Pencil className="w-4 h-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => del(l.id)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+          {!currentModules.length&&<div className="mt-4 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">Crie um módulo primeiro em <Link className="font-medium text-primary hover:underline" to="/admin/levels">Níveis & Módulos</Link>.</div>}
+        </section>
+        <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="border-b p-5 sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><h2 className="font-display text-lg font-semibold">Aulas do módulo</h2><p className="mt-1 text-sm text-muted-foreground">{selModule ? `${filteredLessons.length} resultado(s) neste módulo` : "Selecione um módulo para começar."}</p></div><span className="flex items-center gap-2 text-xs text-muted-foreground"><Filter className="h-3.5 w-3.5"/> Filtros</span></div>
+            <div className="mt-5 grid gap-2 md:grid-cols-[1fr_180px_180px_auto]">
+              <div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"/><Input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar aula..." className="h-10 rounded-xl pl-9"/></div>
+              <Select value={typeFilter} onValueChange={setTypeFilter}><SelectTrigger className="h-10 rounded-xl"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todos os tipos</SelectItem>{TYPES.map(t=><SelectItem key={t} value={t}>{typeMeta[t].label}</SelectItem>)}</SelectContent></Select>
+              <Select value={publicationFilter} onValueChange={setPublicationFilter}><SelectTrigger className="h-10 rounded-xl"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Todos os estados</SelectItem><SelectItem value="published">Publicadas</SelectItem><SelectItem value="draft">Rascunhos</SelectItem></SelectContent></Select>
+              <Button variant="outline" onClick={resetFilters} disabled={!search&&typeFilter==="all"&&publicationFilter==="all"}>Limpar</Button>
             </div>
-          ))}
-        </div>
+          </div>
+          <div className="divide-y">
+            {filteredLessons.map(l=>{const meta=typeMeta[l.type]??typeMeta.text;const TypeIcon=meta.icon;const i=currentLessons.findIndex(x=>x.id===l.id);return <article key={l.id} className="group flex flex-col gap-4 p-5 transition-colors hover:bg-muted/20 sm:flex-row sm:items-center">
+              <div className="flex shrink-0 flex-col items-center"><Button variant="ghost" size="icon" className="h-7 w-7" disabled={i===0} onClick={()=>move(i,-1)}><ArrowUp className="h-3.5 w-3.5"/></Button><span className="text-xs font-semibold text-muted-foreground">{i+1}</span><Button variant="ghost" size="icon" className="h-7 w-7" disabled={i===currentLessons.length-1} onClick={()=>move(i,1)}><ArrowDown className="h-3.5 w-3.5"/></Button></div>
+              <div className="flex min-w-0 flex-1 items-start gap-3"><div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex"><TypeIcon className="h-5 w-5"/></div><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-semibold">{l.title}</h3><span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${l.is_published?"bg-primary/10 text-primary":"bg-muted text-muted-foreground"}`}>{l.is_published?"Publicada":"Rascunho"}</span><span className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">{meta.label}</span></div><p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{l.description||"Sem descrição adicionada."}</p><div className="mt-2 flex gap-3 text-xs text-muted-foreground"><span>{l.duration_minutes??0} min</span><span>•</span><span>Posição {i+1}</span></div></div></div>
+              <div className="flex flex-wrap items-center gap-1 sm:justify-end"><Button variant="ghost" size="icon" title="Exercícios" onClick={()=>setExLesson(l)}><ListChecks className="h-4 w-4"/></Button><Button variant="ghost" size="icon" title="Pré-visualizar" onClick={()=>openPreview(l)}><Eye className="h-4 w-4"/></Button><Button variant="ghost" size="icon" title="Editar" onClick={()=>openEdit(l)}><Pencil className="h-4 w-4"/></Button><Button variant="ghost" size="icon" title={l.is_published?"Despublicar":"Publicar"} onClick={async()=>{const next=!l.is_published;const{error}=await supabase.from("lessons").update({is_published:next}).eq("id",l.id);if(error)return toast({title:"Erro",description:error.message,variant:"destructive"});toast({title:next?"Aula publicada":"Aula despublicada"});load();}}>{l.is_published?<FilePenLine className="h-4 w-4"/>:<CheckCircle2 className="h-4 w-4 text-primary"/>}</Button><Button variant="ghost" size="icon" title="Excluir" onClick={()=>del(l.id)}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>
+            </article>})}
+            {!filteredLessons.length&&<div className="p-10 text-center"><BookOpen className="mx-auto h-8 w-8 text-muted-foreground"/><h3 className="mt-3 font-semibold">{currentLessons.length?"Nenhuma aula encontrada":"Nenhuma aula neste módulo"}</h3><p className="mt-1 text-sm text-muted-foreground">{currentLessons.length?"Altere os filtros ou crie uma nova aula.":"Comece criando a primeira aula deste módulo."}</p>{selModule&&<Button className="mt-4" onClick={openNew}><Plus className="mr-2 h-4 w-4"/> Criar primeira aula</Button>}</div>}
+          </div>
+        </section>
 
         <Dialog open={!!exLesson} onOpenChange={o => !o && setExLesson(null)}>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
