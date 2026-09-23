@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
+
     setProfile(p as Profile | null);
     const roles = (r ?? []).map((x: any) => x.role as AppRole);
     const best: AppRole | null = roles.includes("admin")
@@ -51,23 +52,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, s) => {
+    let active = true;
+    let profileRequest = 0;
+
+    const syncAuth = async (s: Session | null) => {
+      const requestId = ++profileRequest;
+
+      if (!active) return;
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
-      } else {
+
+      if (!s?.user) {
         setProfile(null);
         setRole(null);
+        setLoading(false);
+        return;
       }
+
+      setLoading(true);
+      await loadProfile(s.user.id);
+
+      if (active && requestId === profileRequest) {
+        setLoading(false);
+      }
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, s) => {
+      void syncAuth(s);
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) loadProfile(s.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+
+    void supabase.auth.getSession().then(({ data: { session: s } }) => {
+      void syncAuth(s);
     });
-    return () => sub.subscription.unsubscribe();
+
+    return () => {
+      active = false;
+      profileRequest += 1;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const refresh = async () => {
