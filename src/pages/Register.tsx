@@ -25,7 +25,8 @@ export default function Register() {
     e.preventDefault();
     if (!role) return;
     setIsLoading(true);
-    const { error } = await supabase.auth.signUp({
+
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -33,18 +34,32 @@ export default function Register() {
         data: { full_name: name, role },
       },
     });
+
     setIsLoading(false);
+
     if (error) {
       toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
       return;
     }
+
+    if (!data.session) {
+      toast({
+        title: "Confirme seu e-mail",
+        description: role === "teacher"
+          ? "Conta criada. Confirme o e-mail para entrar; depois, aguarde a aprovação do administrador."
+          : "Conta criada. Enviamos um link de confirmação para seu e-mail.",
+      });
+      navigate("/login", { replace: true });
+      return;
+    }
+
     toast({
       title: "Conta criada!",
       description: role === "teacher"
         ? "Sua conta de professor aguarda aprovação do administrador."
         : "Bem-vindo ao Inglês Hope!",
     });
-    navigate("/dashboard");
+    navigate("/dashboard", { replace: true });
   };
 
   return (
