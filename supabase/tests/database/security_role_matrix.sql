@@ -23,7 +23,7 @@ DECLARE
   v_module uuid;
   v_level uuid;
   v_class uuid := gen_random_uuid();
-  v_join_code text := 'T' || substr(replace(v_class::text, '-', ''), 1, 10);
+  v_join_code text := substr(replace(v_class::text, '-', ''), 1, 8);
   v_count integer;
   v_exercise uuid;
   v_denied boolean;
