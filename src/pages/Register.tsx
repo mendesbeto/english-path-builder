@@ -38,7 +38,40 @@ export default function Register() {
     setIsLoading(false);
 
     if (error) {
-      toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
+      const authError = error as { code?: string; status?: number; message?: string };
+      const code = authError.code ?? "";
+      const status = authError.status;
+
+      let title = "Não foi possível criar a conta";
+      let description = "Verifique os dados informados e tente novamente.";
+
+      if (status === 429 || code === "over_email_send_rate_limit" || code === "over_request_rate_limit") {
+        title = "Limite temporário de cadastro";
+        description =
+          code === "over_email_send_rate_limit"
+            ? "O serviço de e-mail atingiu o limite temporário de envio. Aguarde um pouco e tente novamente."
+            : "Foram feitas muitas tentativas em pouco tempo. Aguarde alguns minutos antes de tentar novamente.";
+      } else if (code === "email_address_not_authorized") {
+        title = "E-mail não autorizado para teste";
+        description =
+          "O envio de e-mails deste projeto está temporariamente restrito aos endereços autorizados. Configure um SMTP próprio para liberar cadastros externos.";
+      } else if (code === "email_exists") {
+        title = "E-mail já cadastrado";
+        description = "Este endereço já possui uma conta. Tente entrar ou use outro e-mail.";
+      } else if (code === "email_address_invalid") {
+        title = "E-mail inválido";
+        description = "Informe um endereço de e-mail válido.";
+      } else if (code === "weak_password") {
+        title = "Senha muito fraca";
+        description = "Escolha uma senha mais forte e tente novamente.";
+      } else if (status && status >= 500) {
+        title = "Serviço temporariamente indisponível";
+        description = "O servidor de autenticação apresentou um erro. Aguarde alguns instantes e tente novamente.";
+      } else if (authError.message) {
+        description = authError.message;
+      }
+
+      toast({ title, description, variant: "destructive" });
       return;
     }
 
