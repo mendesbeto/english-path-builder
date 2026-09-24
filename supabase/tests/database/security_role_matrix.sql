@@ -19,6 +19,7 @@ DECLARE
   v_teacher_1 uuid := gen_random_uuid();
   v_teacher_2 uuid := gen_random_uuid();
   v_unapproved_teacher uuid := gen_random_uuid();
+  v_admin uuid := gen_random_uuid();
   v_lesson uuid := gen_random_uuid();
   v_module uuid;
   v_level uuid;
@@ -66,7 +67,8 @@ BEGIN
     (v_student_2, 'authenticated', 'authenticated', 'rls-student-2@example.invalid', '{"full_name":"RLS Student 2","role":"student"}'::jsonb),
     (v_teacher_1, 'authenticated', 'authenticated', 'rls-teacher-1@example.invalid', '{"full_name":"RLS Teacher 1","role":"teacher"}'::jsonb),
     (v_teacher_2, 'authenticated', 'authenticated', 'rls-teacher-2@example.invalid', '{"full_name":"RLS Teacher 2","role":"teacher"}'::jsonb),
-    (v_unapproved_teacher, 'authenticated', 'authenticated', 'rls-teacher-pending@example.invalid', '{"full_name":"RLS Pending Teacher","role":"teacher"}'::jsonb);
+    (v_unapproved_teacher, 'authenticated', 'authenticated', 'rls-teacher-pending@example.invalid', '{"full_name":"RLS Pending Teacher","role":"teacher"}'::jsonb),
+    (v_admin, 'authenticated', 'authenticated', 'rls-admin@example.invalid', '{"full_name":"RLS Admin","role":"admin"}'::jsonb);
 
   DELETE FROM public.user_roles
   WHERE user_id IN (v_student_1, v_student_2, v_teacher_1, v_teacher_2, v_unapproved_teacher);
@@ -77,7 +79,8 @@ BEGIN
     (v_student_2, 'student'::public.app_role),
     (v_teacher_1, 'teacher'::public.app_role),
     (v_teacher_2, 'teacher'::public.app_role),
-    (v_unapproved_teacher, 'teacher'::public.app_role);
+    (v_unapproved_teacher, 'teacher'::public.app_role),
+    (v_admin, 'admin'::public.app_role);
 
   UPDATE public.profiles
   SET current_level = 'A1'::public.level_code,
@@ -302,6 +305,85 @@ BEGIN
   IF NOT v_denied THEN
     RAISE EXCEPTION 'progress isolation failed: non-owner insert was allowed';
   END IF;
+
+  -- Escalation boundary: a student cannot call admin role management.
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', v_student_1::text, 'role', 'authenticated', 'aud', 'authenticated')::text,
+    true
+  );
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.set_user_role(v_teacher_2, 'student'::public.app_role);
+  EXCEPTION WHEN others THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'privilege escalation failed: student changed another user role';
+  END IF;
+
+  -- A student cannot self-approve or modify system-managed profile fields.
+  v_denied := false;
+  BEGIN
+    UPDATE public.profiles
+    SET is_approved = true
+    WHERE id = v_student_1;
+  EXCEPTION WHEN others THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'self-approval protection failed';
+  END IF;
+
+  v_denied := false;
+  BEGIN
+    UPDATE public.profiles
+    SET points = 999999, streak_days = 999, current_level = 'C2'::public.level_code
+    WHERE id = v_student_1;
+  EXCEPTION WHEN others THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'profile system-field protection failed';
+  END IF;
+
+  -- Admin can change a user's role through the controlled RPC.
+  PERFORM set_config(
+    'request.jwt.claims',
+    jsonb_build_object('sub', v_admin::text, 'role', 'authenticated', 'aud', 'authenticated')::text,
+    true
+  );
+
+  PERFORM public.set_user_role(v_teacher_2, 'student'::public.app_role);
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = v_teacher_2 AND role = 'student'::public.app_role
+  ) THEN
+    RAISE EXCEPTION 'admin role-management RPC failed';
+  END IF;
+
+  -- The RPC must protect the last administrator. Make the temporary admin the
+  -- only admin inside this transaction, then verify demotion is rejected.
+  DELETE FROM public.user_roles WHERE role = 'admin'::public.app_role AND user_id <> v_admin;
+
+  v_denied := false;
+  BEGIN
+    PERFORM public.set_user_role(v_admin, 'student'::public.app_role);
+  EXCEPTION WHEN others THEN
+    v_denied := true;
+  END;
+
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'last-admin protection failed';
+  END IF;
+
+  -- Restore the temporary teacher fixture role so later assertions remain clear.
+  PERFORM public.set_user_role(v_teacher_2, 'teacher'::public.app_role);
 
   -- Restore the database execution role before completing the block.
   RESET ROLE;
