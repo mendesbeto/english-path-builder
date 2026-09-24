@@ -48,7 +48,14 @@ BEGIN
   LIMIT 1;
 
   IF v_module IS NULL THEN
-    RAISE EXCEPTION 'security harness requires an A1 module';
+    v_module := gen_random_uuid();
+    INSERT INTO public.modules (
+      id, level_id, title, description, order_num, created_by
+    )
+    VALUES (
+      v_module, v_level, 'RLS Regression Module',
+      'Temporary authorization fixture', 9999, NULL
+    );
   END IF;
 
   -- Auth rows invoke the normal profile/role trigger. The test then normalizes
