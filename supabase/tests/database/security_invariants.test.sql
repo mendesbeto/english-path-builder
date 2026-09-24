@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(12);
+select plan(13);
 
 -- All API-facing application tables must have RLS enabled.
 select results_eq(
@@ -123,18 +123,52 @@ select ok(
   'submit_lesson_attempt pins search_path'
 );
 
--- Published lesson access is enforced by a SECURITY DEFINER helper.
+-- Internal RLS helpers live outside the exposed public schema.
 select ok(
-  exists (
+  (not has_function_privilege('authenticated', 'public.can_access_lesson(uuid,uuid)', 'EXECUTE'))
+  and exists (
     select 1
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'
+    where n.nspname = 'private'
       and p.proname = 'can_access_lesson'
       and p.prosecdef
-      and array_to_string(p.proconfig, ',') like '%search_path=public%'
+      and array_to_string(p.proconfig, ',') like '%search_path=%'
+  )
+  and exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname = 'has_role'
+      and p.prosecdef
+      and array_to_string(p.proconfig, ',') like '%search_path=%'
+  )
+  and exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname = 'has_approved_role'
+      and p.prosecdef
+  )
+  and exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname = 'is_class_member'
+      and p.prosecdef
   ),
-  'can_access_lesson is hardened as SECURITY DEFINER with fixed search_path'
+  'internal SECURITY DEFINER RLS helpers live in private schema'
+);
+
+-- Public helper functions are no longer an execution surface.
+select ok(
+  (not has_function_privilege('authenticated', 'public.has_role(uuid,app_role)', 'EXECUTE'))
+  and (not has_function_privilege('authenticated', 'public.has_approved_role(uuid,app_role)', 'EXECUTE'))
+  and (not has_function_privilege('authenticated', 'public.is_class_member(uuid,uuid)', 'EXECUTE')),
+  'legacy public helper RPCs are not executable by authenticated users'
 );
 
 -- Student lesson access policy must delegate to the access helper.
