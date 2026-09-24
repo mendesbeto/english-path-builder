@@ -25,8 +25,8 @@ DECLARE
   v_class uuid := gen_random_uuid();
   v_join_code text := 'T' || substr(replace(v_class::text, '-', ''), 1, 10);
   v_count integer;
-  v_name text;
-  v_result jsonb;
+  v_exercise uuid;
+  v_denied boolean;
 BEGIN
   -- Use an existing published A1 level/module so the access helper exercises
   -- the same CEFR path used by the application.
@@ -126,7 +126,7 @@ BEGIN
     gen_random_uuid(), v_lesson, 'RLS fixture question',
     '["A","B"]'::jsonb, 10, 1
   )
-  RETURNING id INTO v_count;
+  RETURNING id INTO v_exercise;
 
   INSERT INTO public.exercise_answers (exercise_id, correct_answer)
   SELECT id, 'A'
@@ -275,15 +275,18 @@ BEGIN
     RAISE EXCEPTION 'approval boundary failed: unapproved teacher saw another teacher class';
   END IF;
 
-  -- Student 2 cannot submit an attempt for a lesson they cannot access by level.
-  -- Temporarily move student 2 below the lesson level and assert the RPC denies it.
-  -- A1 is the first CEFR level, so a C2 lesson is needed for this specific check;
-  -- instead verify that a student cannot directly insert progress for another user.
-  INSERT INTO public.lesson_progress (student_id, lesson_id, completed, score)
-  VALUES (v_student_1, v_lesson, false, 0);
+  -- Student 2 cannot directly insert progress for student 1.
+  v_denied := false;
+  BEGIN
+    INSERT INTO public.lesson_progress (student_id, lesson_id, completed, score)
+    VALUES (v_student_1, v_lesson, false, 0);
+    v_denied := false;
+  EXCEPTION WHEN insufficient_privilege OR check_violation OR others THEN
+    v_denied := true;
+  END;
 
-  IF FOUND THEN
-    RAISE EXCEPTION 'direct progress insert unexpectedly succeeded for non-owner';
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'progress isolation failed: non-owner insert was allowed';
   END IF;
 
   -- Restore the database execution role before completing the block.
