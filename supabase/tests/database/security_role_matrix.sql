@@ -145,6 +145,13 @@ BEGIN
   ORDER BY created_at DESC
   LIMIT 1;
 
+  -- Isolate the temporary admin fixture from any pre-existing administrators.
+  -- This runs before SET LOCAL ROLE so the harness can remain valid after
+  -- tightening authenticated table grants. The enclosing transaction rolls it back.
+  DELETE FROM public.user_roles
+  WHERE role = 'admin'::public.app_role
+    AND user_id <> v_admin;
+
   -- All following reads/writes are executed as the application role.
   SET LOCAL ROLE authenticated;
 
@@ -367,10 +374,7 @@ BEGIN
     RAISE EXCEPTION 'admin role-management RPC failed';
   END IF;
 
-  -- The RPC must protect the last administrator. Make the temporary admin the
-  -- only admin inside this transaction, then verify demotion is rejected.
-  DELETE FROM public.user_roles WHERE role = 'admin'::public.app_role AND user_id <> v_admin;
-
+  -- The RPC must protect the last administrator.
   v_denied := false;
   BEGIN
     PERFORM public.set_user_role(v_admin, 'student'::public.app_role);
