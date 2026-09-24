@@ -1,0 +1,41 @@
+name: Supabase Security Matrix
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/database/**"
+      - ".github/workflows/security-role-matrix.yml"
+  workflow_dispatch:
+
+jobs:
+  security-role-matrix:
+    name: Cross-user RLS regression
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.SUPABASE_TEST_DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require test database secret
+        run: |
+          if [ -z "${DATABASE_URL}" ]; then
+            echo "::error::SUPABASE_TEST_DATABASE_URL is not configured."
+            echo "Configure a dedicated non-production Supabase test/staging database before enabling this job."
+            exit 1
+          fi
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run security role matrix
+        run: |
+          psql "${DATABASE_URL}" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/database/security_role_matrix.sql
+
+      - name: Security matrix completed
+        run: echo "Cross-user RLS security matrix completed successfully."
