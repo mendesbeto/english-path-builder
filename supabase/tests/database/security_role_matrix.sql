@@ -328,7 +328,7 @@ BEGIN
   v_denied := false;
   BEGIN
     UPDATE public.profiles
-    SET is_approved = true
+    SET is_approved = false
     WHERE id = v_student_1;
   EXCEPTION WHEN others THEN
     v_denied := true;
