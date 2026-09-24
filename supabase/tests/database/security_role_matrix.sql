@@ -178,14 +178,21 @@ BEGIN
     RAISE EXCEPTION 'progress isolation failed: expected 1 visible row, got %', v_count;
   END IF;
 
-  -- Student 1 cannot update student 2's progress.
-  UPDATE public.lesson_progress
-  SET score = 1
-  WHERE student_id = v_student_2
-    AND lesson_id = v_lesson;
+  -- Direct progress writes are globally blocked; the score path is the only
+  -- supported write API.
+  v_denied := false;
+  BEGIN
+    UPDATE public.lesson_progress
+    SET score = 1
+    WHERE student_id = v_student_2
+      AND lesson_id = v_lesson;
+    v_denied := false;
+  EXCEPTION WHEN insufficient_privilege OR others THEN
+    v_denied := true;
+  END;
 
-  IF FOUND THEN
-    RAISE EXCEPTION 'progress isolation failed: peer progress update was allowed';
+  IF NOT v_denied THEN
+    RAISE EXCEPTION 'progress isolation failed: direct peer progress update was allowed';
   END IF;
 
   -- Student 1 can read the published exercise but never its answer key.
