@@ -73,7 +73,6 @@ export default function TeacherDashboard() {
       const [
         { count: mine },
         { count: all },
-        { data: roles },
         { data: profiles },
         { data: progress },
         { data: classRows },
@@ -81,7 +80,6 @@ export default function TeacherDashboard() {
       ] = await Promise.all([
         supabase.from("lessons").select("*", { count: "exact", head: true }).eq("created_by", user.id),
         supabase.from("lessons").select("*", { count: "exact", head: true }),
-        supabase.from("user_roles").select("user_id, role").eq("role", "student"),
         supabase.from("profiles").select("id, full_name, current_level, points, streak_days"),
         supabase.from("lesson_progress").select("student_id, completed, score, completed_at"),
         supabase.from("classes").select("id, name").order("name"),
@@ -95,7 +93,10 @@ export default function TeacherDashboard() {
       setClasses(classRows ?? []);
 
       const classNameById = new Map((classRows ?? []).map((c) => [c.id, c.name]));
-      const studentIds = new Set((roles ?? []).map((r) => r.user_id));
+      // Use actual class memberships as the source of teacher-visible students.
+      // user_roles is intentionally restricted by RLS and is not a reliable
+      // source for the teacher dashboard.
+      const studentIds = new Set((enrollments ?? []).map((e) => e.student_id));
 
       const rows: StudentRow[] = (profiles ?? [])
         .filter((p) => studentIds.has(p.id))
