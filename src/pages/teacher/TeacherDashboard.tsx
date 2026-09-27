@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Award,
   BarChart3,
@@ -63,6 +64,9 @@ export default function TeacherDashboard() {
   const [levelFilter, setLevelFilter] = useState("all");
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [selectedStudent, setSelectedStudent] = useState<StudentRow | null>(null);
+  const [studentProgress, setStudentProgress] = useState<any[]>([]);
+  const [progressLoading, setProgressLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -137,6 +141,39 @@ export default function TeacherDashboard() {
       cancelled = true;
     };
   }, [user]);
+
+  const openStudent = async (student: StudentRow) => {
+    setSelectedStudent(student);
+    setStudentProgress([]);
+    setProgressLoading(true);
+
+    const { data: progress } = await supabase
+      .from("lesson_progress")
+      .select("lesson_id, completed, score, completed_at")
+      .eq("student_id", student.id)
+      .order("completed_at", { ascending: false });
+
+    const rows = progress ?? [];
+    const lessonIds = [...new Set(rows.map((item: any) => item.lesson_id))];
+
+    let lessons: any[] = [];
+    if (lessonIds.length) {
+      const { data } = await supabase
+        .from("lessons")
+        .select("id, title, module_id")
+        .in("id", lessonIds);
+      lessons = data ?? [];
+    }
+
+    const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+    setStudentProgress(
+      rows.map((item: any) => ({
+        ...item,
+        title: lessonById.get(item.lesson_id)?.title ?? "Aula",
+      })),
+    );
+    setProgressLoading(false);
+  };
 
   const summary = useMemo(() => {
     const completed = students.reduce((sum, student) => sum + student.completed, 0);
@@ -404,8 +441,14 @@ export default function TeacherDashboard() {
                   return (
                     <tr key={student.id} className="border-t transition-colors hover:bg-muted/30">
                       <td className="px-5 py-4">
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">{student.points} pontos</p>
+                        <button
+                          type="button"
+                          onClick={() => openStudent(student)}
+                          className="text-left hover:underline"
+                        >
+                          <p className="font-medium">{student.name}</p>
+                          <p className="text-xs text-muted-foreground">{student.points} pontos · Ver progresso</p>
+                        </button>
                       </td>
                       <td className="px-5 py-4">
                         <span className={`rounded-md border px-2 py-1 text-xs font-bold ${levelClass[student.level] ?? "bg-muted"}`}>
@@ -439,6 +482,66 @@ export default function TeacherDashboard() {
           <Target className="h-3.5 w-3.5" />
           Acompanhar com dados claros ajuda a orientar o próximo passo de cada aluno.
         </div>
+      </div>
+
+      <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Progresso de {selectedStudent?.name ?? "aluno"}</DialogTitle>
+          </DialogHeader>
+          {selectedStudent && (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Nível</p>
+                  <p className="mt-1 font-semibold">{selectedStudent.level}</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Pontos</p>
+                  <p className="mt-1 font-semibold">{selectedStudent.points}</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Conclusões</p>
+                  <p className="mt-1 font-semibold">{selectedStudent.completed}</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 p-3">
+                  <p className="text-xs text-muted-foreground">Média</p>
+                  <p className="mt-1 font-semibold">{selectedStudent.completed ? `${selectedStudent.avgScore}%` : "—"}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold">Atividade das aulas</h3>
+                {progressLoading ? (
+                  <p className="py-6 text-sm text-muted-foreground">Carregando progresso...</p>
+                ) : studentProgress.length === 0 ? (
+                  <p className="py-6 text-sm text-muted-foreground">Nenhuma atividade registrada.</p>
+                ) : (
+                  <div className="mt-3 max-h-72 divide-y overflow-y-auto rounded-xl border">
+                    {studentProgress.map((item: any) => (
+                      <div key={item.lesson_id} className="flex items-center justify-between gap-4 p-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.completed_at ? fmtDate(item.completed_at) : "Em andamento"}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <p className="text-sm font-semibold">{item.completed ? "Concluída" : "Em andamento"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.score != null ? `${item.score}%` : "Sem nota"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       </div>
     </AppLayout>
   );
