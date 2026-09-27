@@ -46,12 +46,14 @@ export default function TeacherClasses() {
 
   const load = async () => {
 
-    const [{ data: cls }, { data: roles }, { data: enr }] = await Promise.all([
+    const [{ data: cls }, { data: enr }] = await Promise.all([
       supabase.from("classes").select("*").order("created_at"),
-      supabase.from("user_roles").select("user_id, role").eq("role", "student"),
       supabase.from("class_students").select("id, class_id, student_id"),
     ]);
-    const studentIds = (roles ?? []).map((r: any) => r.user_id);
+    // Build the student list from actual class memberships instead of user_roles.
+    // Teachers can read their class memberships, while user_roles is intentionally
+    // restricted and therefore is not a reliable source for this staff view.
+    const studentIds = [...new Set((enr ?? []).map((r: any) => r.student_id))];
     let profs: any[] = [];
     if (studentIds.length) {
       const { data } = await supabase
