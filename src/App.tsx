@@ -48,7 +48,7 @@ const App = () => (
 
             <Route path="/admin" element={<ProtectedRoute allow={["admin"]}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute allow={["admin"]}><AdminUsers /></ProtectedRoute>} />
-            <Route path="/admin/levels" element={<ProtectedRoute allow={["admin"]}><AdminLevels /></ProtectedRoute>} />
+            <Route path="/admin/levels" element={<ProtectedRoute allow={["teacher","admin"]}><AdminLevels /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
