@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Pencil, BookOpen, Layers3, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminLevels() {
   const [levels, setLevels] = useState<any[]>([]);
@@ -24,6 +25,8 @@ export default function AdminLevels() {
   const [lvlTitle, setLvlTitle] = useState("");
   const [lvlDesc, setLvlDesc] = useState("");
   const { toast } = useToast();
+  const { role } = useAuth();
+  const canEditLevels = role === "admin";
 
   const load = async () => {
     setLoading(true);
@@ -75,7 +78,7 @@ export default function AdminLevels() {
     <AppLayout>
       <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div><Badge variant="secondary" className="mb-2">Administração · Conteúdo</Badge><h1 className="text-3xl font-bold tracking-tight">Níveis & módulos</h1><p className="mt-1 text-muted-foreground">Organize o percurso CEFR e a estrutura das aulas.</p></div>
+          <div><Badge variant="secondary" className="mb-2">{canEditLevels ? "Administração · Conteúdo" : "Gestão · Conteúdo"}</Badge><h1 className="text-3xl font-bold tracking-tight">Níveis & módulos</h1><p className="mt-1 text-muted-foreground">Organize o percurso CEFR e a estrutura das aulas.</p></div>
           <Button variant="outline" onClick={load} disabled={loading}>{loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Atualizar</Button>
         </div>
 
@@ -90,7 +93,7 @@ export default function AdminLevels() {
           <Card className="rounded-2xl">
             <CardHeader><CardTitle>Resumo do nível</CardTitle></CardHeader>
             <CardContent>
-              {selected ? <><Badge>{selected.code}</Badge><h2 className="mt-3 text-2xl font-bold">{selected.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{selected.description || "Sem descrição."}</p><Button variant="outline" className="mt-5 w-full" onClick={() => { setEditingLevel(selected); setLvlTitle(selected.title); setLvlDesc(selected.description ?? ""); }}><Pencil className="mr-2 h-4 w-4" /> Editar nível</Button></> : <p className="text-sm text-muted-foreground">Selecione um nível.</p>}
+              {selected ? <><Badge>{selected.code}</Badge><h2 className="mt-3 text-2xl font-bold">{selected.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{selected.description || "Sem descrição."}</p>{canEditLevels && <Button variant="outline" className="mt-5 w-full" onClick={() => { setEditingLevel(selected); setLvlTitle(selected.title); setLvlDesc(selected.description ?? ""); }}><Pencil className="mr-2 h-4 w-4" /> Editar nível</Button>}</> : <p className="text-sm text-muted-foreground">Selecione um nível.</p>}
             </CardContent>
           </Card>
 
