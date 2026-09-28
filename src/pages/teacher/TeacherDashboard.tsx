@@ -541,8 +541,6 @@ export default function TeacherDashboard() {
           )}
         </DialogContent>
       </Dialog>
-
-      </div>
     </AppLayout>
   );
 }
