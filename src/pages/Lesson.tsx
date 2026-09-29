@@ -45,6 +45,7 @@ export default function Lesson() {
   const [exercises, setExercises] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [retaking, setRetaking] = useState(false);
   const [quizResult, setQuizResult] = useState<any>(null);
   const [progress, setProgress] = useState<any>(null);
   const [writing, setWriting] = useState("");
@@ -56,6 +57,7 @@ export default function Lesson() {
     const load = async () => {
       setLoading(true);
       setSubmitted(false);
+      setRetaking(false);
       setQuizResult(null);
       setAnswers({});
       setWriting("");
@@ -141,7 +143,10 @@ export default function Lesson() {
 
   const submitQuiz = async () => {
     const saved = await saveProgress(answers);
-    if (saved) setSubmitted(true);
+    if (saved) {
+      setSubmitted(true);
+      setRetaking(false);
+    }
   };
 
 
@@ -377,16 +382,32 @@ export default function Lesson() {
                     })}
                   </div>
 
-                  {!submitted ? (
-                    <Button
-                      className="mt-5 w-full"
-                      disabled={Object.keys(answers).length < exercises.length || saving}
-                      onClick={submitQuiz}
-                    >
-                      {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Enviar respostas
-                    </Button>
-                  ) : (
+                  {progress?.completed && !submitted && !retaking ? (
+                    <div className="mt-5 rounded-2xl border border-success/30 bg-success/5 p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" />
+                          <div>
+                            <h3 className="font-display font-bold">Exercício concluído</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Sua pontuação atual é {progress.score ?? 0} pontos. Você pode refazer o exercício para tentar melhorar o resultado.
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setAnswers({});
+                            setQuizResult(null);
+                            setSubmitted(false);
+                            setRetaking(true);
+                          }}
+                        >
+                          Refazer exercício
+                        </Button>
+                      </div>
+                    </div>
+                  ) : !submitted ? (
                     quizResult && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
@@ -398,7 +419,12 @@ export default function Lesson() {
                         </div>
                         <p className="mt-3 font-display text-3xl font-bold text-primary">{quizResult.correct}/{quizResult.total}</p>
                         <p className="text-sm text-muted-foreground">{quizResult.score} de {quizResult.max_points} pontos</p>
-                        <Button variant="outline" className="mt-4" onClick={() => { setSubmitted(false); setQuizResult(null); setAnswers({}); }}>
+                        <Button variant="outline" className="mt-4" onClick={() => {
+                          setSubmitted(false);
+                          setQuizResult(null);
+                          setAnswers({});
+                          setRetaking(true);
+                        }}>
                           Refazer exercício
                         </Button>
                       </motion.div>
