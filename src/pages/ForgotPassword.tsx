@@ -18,7 +18,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: "https://english-path-builder.onrender.com/reset-password",
     });
 
     setIsLoading(false);
