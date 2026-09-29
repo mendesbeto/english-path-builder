@@ -408,6 +408,15 @@ export default function Lesson() {
                       </div>
                     </div>
                   ) : !submitted ? (
+                    <Button
+                      className="mt-5 w-full"
+                      disabled={Object.keys(answers).length < exercises.length || saving}
+                      onClick={submitQuiz}
+                    >
+                      {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Enviar respostas
+                    </Button>
+                  ) : (
                     quizResult && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
@@ -429,7 +438,7 @@ export default function Lesson() {
                         </Button>
                       </motion.div>
                     )
-                  )}
+                  )}                  )}
                 </section>
               )}
 
