@@ -33,7 +33,7 @@ function toEmbed(url: string) {
 
 export default function Lesson() {
   const { lessonId } = useParams();
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -132,6 +132,7 @@ export default function Lesson() {
         score: data.score ?? 0,
         completed_at: new Date().toISOString(),
       }));
+      await refresh();
     }
 
     toast({
