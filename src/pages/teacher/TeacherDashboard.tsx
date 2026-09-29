@@ -237,13 +237,13 @@ export default function TeacherDashboard() {
             <div className="max-w-2xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/15 bg-background/70 px-3 py-1.5 text-xs font-semibold text-primary">
                 <Sparkles className="h-3.5 w-3.5" />
-                Área do professor
+                Painel de gestão pedagógica
               </div>
               <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
                 Olá, {profile?.full_name?.split(" ")[0] ?? "Professor"}.
               </h1>
               <p className="mt-2 text-muted-foreground">
-                Acompanhe a evolução dos alunos e mantenha o conteúdo da plataforma em movimento.
+                Acompanhe seus alunos, turmas e resultados em um só lugar.
               </p>
             </div>
 
@@ -275,10 +275,10 @@ export default function TeacherDashboard() {
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { label: "Alunos acompanhados", value: students.length, icon: Users, tone: "text-primary" },
-            { label: "Ativos nesta semana", value: summary.active, icon: TrendingUp, tone: "text-accent" },
-            { label: "Aulas concluídas", value: summary.completed, icon: CircleCheck, tone: "text-primary" },
-            { label: "Média de desempenho", value: `${summary.average}%`, icon: Award, tone: "text-secondary" },
+            { label: "Alunos", value: students.length, icon: Users, tone: "text-primary" },
+            { label: "Turmas", value: classes.length, icon: BookOpen, tone: "text-accent" },
+            { label: "Aulas criadas", value: myLessons, icon: Target, tone: "text-primary" },
+            { label: "Média dos alunos", value: `${summary.average}%`, icon: Award, tone: "text-secondary" },
           ].map((item) => (
             <div key={item.label} className="rounded-2xl border bg-card p-5 shadow-sm">
               <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-muted ${item.tone}`}>
@@ -342,7 +342,7 @@ export default function TeacherDashboard() {
 
             <Button asChild className="mt-4">
               <Link to="/teacher/lessons">
-                Gerenciar conteúdo
+                Gerenciar aulas
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
@@ -353,9 +353,9 @@ export default function TeacherDashboard() {
           <div className="border-b p-5 sm:p-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h2 className="font-display text-lg font-semibold">Acompanhamento dos alunos</h2>
+                <h2 className="font-display text-lg font-semibold">Meus alunos</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Consulte progresso, desempenho e última atividade.
+                  Acompanhe progresso, desempenho e atividade recente.
                 </p>
               </div>
               <span className="text-xs text-muted-foreground">
@@ -429,7 +429,7 @@ export default function TeacherDashboard() {
                       <Clock3 className="mx-auto mb-2 h-5 w-5 text-muted-foreground" />
                       <p className="text-sm font-medium">{students.length ? "Nenhum resultado" : "Nenhum aluno cadastrado"}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {students.length ? "Experimente remover ou alterar os filtros." : "Os alunos aparecerão aqui quando estiverem cadastrados."}
+                        {students.length ? "Experimente remover ou alterar os filtros." : "Os alunos aparecerão aqui quando estiverem matriculados em uma turma."}
                       </p>
                     </td>
                   </tr>
@@ -480,7 +480,7 @@ export default function TeacherDashboard() {
 
         <div className="flex items-center justify-center gap-2 pb-4 text-xs text-muted-foreground">
           <Target className="h-3.5 w-3.5" />
-          Acompanhar com dados claros ajuda a orientar o próximo passo de cada aluno.
+          Dados claros para orientar o próximo passo de cada aluno.
         </div>
       </div>
 
