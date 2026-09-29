@@ -23,25 +23,54 @@ export default function ResetPassword() {
   useEffect(() => {
     let active = true;
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((event) => {
+    const handleAuthState = (event: string) => {
       if (!active) return;
+
       if (event === "PASSWORD_RECOVERY") {
         setIsRecoverySession(true);
         setCheckingSession(false);
       }
+    };
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((event) => {
+      handleAuthState(event);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initializeRecovery = async () => {
+      const hash = window.location.hash;
+      const hasRecoveryHash = hash.includes("access_token=") && hash.includes("type=recovery");
+      const hashError = new URLSearchParams(hash.replace(/^#/, "")).get("error_description");
+
+      if (hashError) {
+        setCheckingSession(false);
+        toast({
+          title: "Link de recuperação inválido",
+          description: "O link não pôde ser validado. Solicite um novo link quando o limite de envio estiver disponível.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+
       if (!active) return;
-      setIsRecoverySession(Boolean(session));
+
+      if (session || hasRecoveryHash) {
+        setIsRecoverySession(Boolean(session) || hasRecoveryHash);
+      } else {
+        setIsRecoverySession(false);
+      }
+
       setCheckingSession(false);
-    });
+    };
+
+    void initializeRecovery();
 
     return () => {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, []);
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,9 +149,7 @@ export default function ResetPassword() {
           {completed ? (
             <>
               <h1 className="text-3xl font-display font-bold mb-2">Senha alterada</h1>
-              <p className="text-muted-foreground mb-8">
-                Sua nova senha já está ativa.
-              </p>
+              <p className="text-muted-foreground mb-8">Sua nova senha já está ativa.</p>
               <Button variant="hero" size="lg" className="w-full" onClick={() => navigate("/login")}>
                 Ir para o login
               </Button>
@@ -140,9 +167,7 @@ export default function ResetPassword() {
           ) : (
             <>
               <h1 className="text-3xl font-display font-bold mb-2">Criar nova senha</h1>
-              <p className="text-muted-foreground mb-8">
-                Escolha uma nova senha para sua conta.
-              </p>
+              <p className="text-muted-foreground mb-8">Escolha uma nova senha para sua conta.</p>
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
@@ -205,9 +230,7 @@ export default function ResetPassword() {
       <div className="hidden lg:flex flex-1 bg-gradient-hero items-center justify-center p-12">
         <div className="text-center text-white">
           <h2 className="text-4xl font-display font-bold mb-4">Uma nova senha, o mesmo caminho</h2>
-          <p className="text-white/80 text-lg max-w-md">
-            Volte ao Inglês Hope e continue seu progresso.
-          </p>
+          <p className="text-white/80 text-lg max-w-md">Volte ao Inglês Hope e continue seu progresso.</p>
         </div>
       </div>
     </div>
