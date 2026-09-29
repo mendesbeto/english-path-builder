@@ -438,7 +438,7 @@ export default function Lesson() {
                         </Button>
                       </motion.div>
                     )
-                  )}                  )}
+                  )}
                 </section>
               )}
 
