@@ -73,7 +73,7 @@ export default function AdminUsers() {
     total: rows.length,
     students: rows.filter(r => r.role === "student").length,
     teachers: rows.filter(r => r.role === "teacher").length,
-    pending: rows.filter(r => r.role === "teacher" && !r.is_approved).length,
+    pending: rows.filter(r => !r.is_approved).length,
   }), [rows]);
 
   const roleLabel: Record<Role, string> = { student: "Aluno", teacher: "Professor", admin: "Admin" };
